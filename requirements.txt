@@ -1,0 +1,9 @@
+flask>=3.0
+pillow>=10.0
+numpy>=1.26
+soundfile>=0.12
+faster-whisper>=1.0
+kokoro-onnx>=0.4
+imageio-ffmpeg>=0.5
+yt-dlp>=2024.8
+requests>=2.31
