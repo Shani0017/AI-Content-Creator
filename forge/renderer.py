@@ -17,6 +17,7 @@ from . import paths, speech
 
 W, H, FPS = 1080, 1920, 30
 HEAD, GAP, TAIL = 0.5, 0.28, 1.3
+STAGE_TOP, STAGE_BOT = 335, 1285
 
 THEMES = {
     "midnight": dict(bg1=(10, 14, 34), bg2=(40, 20, 62), y=(255, 216, 77), g=(125, 255, 138), p=(255, 92, 138), c=(95, 211, 255), r=(255, 92, 138)),
@@ -107,7 +108,7 @@ def card_sprite(text, label, col, size=100, maxw=860):
     text, label = _plain(text), _plain(label)
     tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
     f = fit_font(tmp, text, size, maxw - 120)
-    lf = font(42, False)
+    lf = font(max(34, int(f.size * 0.42)), False)
     tw = text_w(tmp, text, f)
     lw = text_w(tmp, " " + label, lf) if label else 0
     w = int(tw + lw + 90)
@@ -169,6 +170,41 @@ def check_sprite(col, size=140):
     return im
 
 
+def board_text_sprite(rn, size=84, maxw=900, max_lines=3):
+    """big centred text in the middle of the stage, wrapped to fit. rn = [(text, colour)]; digits are highlighted when colour is plain"""
+    tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
+    toks = []
+    for t, col in rn:
+        for w_ in t.split():
+            toks.append((w_, col))
+    while True:
+        f = font(size)
+        sp = text_w(tmp, " ", f)
+        lines, cur, cw = [], [], 0.0
+        for w_, col in toks:
+            ww = text_w(tmp, w_, f)
+            if cur and cw + sp + ww > maxw:
+                lines.append(cur); cur, cw = [], 0.0
+            cur.append((w_, col, ww))
+            cw += (sp if len(cur) > 1 else 0) + ww
+        if cur:
+            lines.append(cur)
+        if len(lines) <= max_lines or size <= 44:
+            break
+        size -= 6
+    lh = int(size * 1.32)
+    im = Image.new("RGBA", (maxw + 80, lh * len(lines) + 20), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for li, ln in enumerate(lines):
+        tw = sum(w[2] for w in ln) + sp * (len(ln) - 1)
+        x = (im.width - tw) / 2
+        for w_, col, ww in ln:
+            c = col
+            shadowed(d, (x, 8 + li * lh), w_, f, c, off=4)
+            x += ww + sp
+    return im
+
+
 def two_line_sprite(l1, l2, c2):
     tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
     f = font(92)
@@ -195,27 +231,51 @@ STOP = {"a", "an", "the", "of", "is", "are", "and", "to", "in", "on", "per", "fo
         "or", "at", "with", "from", "by", "as", "you", "he", "she", "they", "we", "i", "was", "were", "be", "not", "no", "now", "back", "more"}
 
 
+def b_say(s):
+    return _plain(s).strip()
+
+
+OPS = {"times": "×", "plus": "+", "minus": "-", "over": "/"}
+EQ = {"is", "equals", "makes", "gives"}
+
+
 def number_cards(words):
+    """[(time, text, label)]: spoken numbers become cards; 'three times nine is twenty-seven' becomes one '3 × 9 = 27' card"""
     ws = []
     for w in words:
         if ws and w["w"].startswith(".") and ws[-1]["w"][-1:].isdigit():
             ws[-1] = {"w": ws[-1]["w"] + w["w"], "s": ws[-1]["s"], "e": w["e"]}
         else:
             ws.append(dict(w))
-    out, seen = [], set()
-    for i, w in enumerate(ws):
-        if not re.search(r"\d", w["w"]):
+    bare = lambda x: x["w"].strip(".,!?;:")
+    isnum = lambda x: bool(re.search(r"\d", x["w"]))
+    out, seen, i = [], set(), 0
+    while i < len(ws):
+        w = ws[i]
+        if not isnum(w):
+            i += 1
             continue
-        txt = w["w"].strip(".,!?;:")
-        if not txt or txt in seen:
-            continue
-        seen.add(txt)
+        txt, j = bare(w), i
+        while True:                                   # chain: num (op num)* (is num)?
+            nxt = ws[j + 1] if j + 1 < len(ws) else None
+            nxt2 = ws[j + 2] if j + 2 < len(ws) else None
+            nxt3 = ws[j + 3] if j + 3 < len(ws) else None
+            if nxt and bare(nxt).lower() in OPS and nxt2 and isnum(nxt2) and not ws[j]["w"].endswith((".", "?", "!")):
+                txt += f" {OPS[bare(nxt).lower()]} {bare(nxt2)}"; j += 2; continue
+            if nxt and bare(nxt).lower() == "divided" and nxt2 and bare(nxt2).lower() == "by" and nxt3 and isnum(nxt3):
+                txt += f" ÷ {bare(nxt3)}"; j += 3; continue
+            if nxt and bare(nxt).lower() in EQ and nxt2 and isnum(nxt2) and not ws[j]["w"].endswith((".", "?", "!")):
+                txt += f" = {bare(nxt2)}"; j += 2; continue
+            break
         label = ""
-        if i + 1 < len(ws) and not w["w"].endswith((".", ",", "?", "!")):
-            nxt = ws[i + 1]["w"].strip(".,!?;:").lower()
-            if nxt.isalpha() and nxt not in STOP:
-                label = nxt
-        out.append((w["s"], txt, label))
+        if j == i and j + 1 < len(ws) and not ws[j]["w"].endswith((".", ",", "?", "!")):
+            nx = bare(ws[j + 1]).lower()
+            if nx.isalpha() and nx not in STOP:
+                label = nx
+        if txt not in seen:
+            seen.add(txt)
+            out.append((w["s"], txt, label))
+        i = j + 1
     return out
 
 
@@ -246,35 +306,65 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     steps = []      # (time, runs, clear)
     caps = []       # chunks: (t0, t1, [(word, s, e)])
     last = n - 1
+
+    def stack(items):
+        """items: [dict(img, t0, t1, fx)] -> vertically centred inside the board; scaled down if they would not fit"""
+        gap = 30
+        avail = STAGE_BOT - STAGE_TOP - 40
+        tot = sum(it["img"].height for it in items) + gap * (len(items) - 1)
+        if tot > avail:
+            k = avail / tot
+            for it in items:
+                it["img"] = it["img"].resize((max(2, int(it["img"].width * k)), max(2, int(it["img"].height * k))), Image.LANCZOS)
+            tot = sum(it["img"].height for it in items) + gap * (len(items) - 1)
+        y = (STAGE_TOP + STAGE_BOT) / 2 - tot / 2
+        for it in items:
+            it["cx"], it["y"] = 540, int(y)
+            y += it["img"].height + gap
+            els.append(it)
+
     for p in plans:
         i, t0, dur, words = p["i"], p["t0"], p["dur"], p["words"]
         sb = beats[i]
         t1 = t0 + dur + 0.18
+        items = []
         if i == last and sb.get("cta", True):
-            els.append(dict(img=pill_sprite(spec.get("cta_tag", "BRAIN TEASER"), th), cx=540, y=650, t0=t0, t1=total, fx="pop"))
-            els.append(dict(img=two_line_sprite("Follow for more", "brain teasers", th["y"]), cx=540, y=820, t0=t0 + 0.4, t1=total, fx="up"))
+            items.append(dict(img=pill_sprite(spec.get("cta_tag", "BRAIN TEASER"), th), t0=t0, t1=total, fx="pop"))
+            items.append(dict(img=two_line_sprite("Follow for more", "brain teasers", th["y"]), t0=t0 + 0.4, t1=total, fx="up"))
             sfx_ev += [(t0, "pop"), (t0 + 0.4, "pop")]
         else:
             has_ans = bool(sb.get("answer"))
-            ys = [380, 585] if has_ans else [380, 585, 790]
             cards = sb.get("cards")
-            items = [(t0 + 0.25 + 0.5 * k, c, "") for k, c in enumerate(cards or [])] if cards else [(t0 + s, tx, lb) for s, tx, lb in number_cards(words)]
-            for k, (tt, tx, lb) in enumerate(items[:len(ys)]):
-                size = 100 if len(tx) <= 6 else (80 if len(tx) <= 9 else 62)
-                els.append(dict(img=card_sprite(tx, lb, th["y"], size), cx=540, y=ys[k], t0=max(t0, tt - 0.06), t1=t1, fx=("left", "right", "up")[k % 3]))
+            found = [(t0 + 0.25 + 0.5 * k, c, "") for k, c in enumerate(cards or [])] if cards else [(t0 + s, tx, lb) for s, tx, lb in number_cards(words)]
+            maxc = 2 if (has_ans or sb.get("stamp")) else 3
+            for k, (tt, tx, lb) in enumerate(found[:maxc]):
+                size = 128 if len(tx) <= 5 else (100 if len(tx) <= 8 else 78)
+                items.append(dict(img=card_sprite(tx, lb, th["y"], size, maxw=900), t0=max(t0, tt - 0.06), t1=t1, fx=("left", "right", "up")[k % 3]))
                 sfx_ev.append((tt, "pop"))
-            if i == 0:
-                els.append(dict(img=pill_sprite(spec.get("hook_tag", "CAN YOU SOLVE IT?"), th), cx=540, y=1110, t0=t0 + 0.5, t1=t1, fx="pop"))
             if sb.get("stamp"):
                 tx, col = sb["stamp"]
-                els.append(dict(img=stamp_sprite(tx, hexrgb(col) if isinstance(col, str) else col), cx=540, y=900, t0=t0 + dur * 0.35, t1=t1, fx="slam"))
+                items.append(dict(img=stamp_sprite(tx, hexrgb(col) if isinstance(col, str) else col), t0=t0 + dur * 0.35, t1=t1, fx="slam"))
                 sfx_ev.append((t0 + dur * 0.35, "buzz" if tx == "WRONG" else "hit"))
             if has_ans:
-                els.append(dict(img=big_sprite(sb["answer"], th["g"], 190 if len(sb["answer"]) <= 6 else 140), cx=540, y=905, t0=t0 + dur * 0.45, t1=t1, fx="pop"))
-                els.append(dict(img=check_sprite(th["g"]), cx=540, y=1140, t0=t0 + dur * 0.45 + 0.25, t1=t1, fx="pop"))
+                items.append(dict(img=big_sprite(sb["answer"], th["g"], 190 if len(sb["answer"]) <= 6 else 140), t0=t0 + dur * 0.45, t1=t1, fx="pop"))
+                items.append(dict(img=check_sprite(th["g"], 120), t0=t0 + dur * 0.45 + 0.25, t1=t1, fx="pop"))
                 sfx_ev.append((t0 + dur * 0.45, "chime"))
+            if len(items) < 2 and sb.get("steps") and not has_ans:
+                lines = [runs(x, th) for x in sb["steps"]]
+                items.append(dict(img=board_text_sprite(lines[-1]), t0=t0 + 0.12, t1=t1, fx="up"))
+            elif not items and not has_ans:
+                first = re.split(r"(?<=[.!?])\s", b_say(sb["say"]))[0]
+                if len(first) > 90:
+                    first = first[:90].rsplit(" ", 1)[0]
+                items.append(dict(img=board_text_sprite([(first.rstrip(".,"), th["y"])]), t0=t0 + 0.35, t1=t1, fx="up"))
+            if i == 0 and not items:
+                items.append(dict(img=pill_sprite(spec.get("hook_tag", "CAN YOU SOLVE IT?"), th), t0=t0 + 0.4, t1=t1, fx="pop"))
+            elif i == 0:
+                items.append(dict(img=pill_sprite(spec.get("hook_tag", "CAN YOU SOLVE IT?"), th), t0=t0 + 0.5, t1=t1, fx="pop"))
             for k, line in enumerate(sb.get("steps") or []):
                 steps.append((t0 + 0.3 + k * max(0.6, (dur - 0.6) / max(1, len(sb["steps"]))), runs(line, th), k == 0))
+        if items:
+            stack(items)
         cur = []                                                    # caption chunks of up to 3 words
         for w in words:
             cur.append((w["w"], t0 + w["s"], t0 + w["e"]))
@@ -313,8 +403,12 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     xx = np.arange(W)[None, :, None]
     px += 6 * (((xx // 90) + (np.arange(H)[:, None, None] // 90)) % 2)         # faint checker texture
     bg = Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), "RGB")
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((140, 420, 940, 1220), fill=th["y"] + (34,))
+    bg = Image.alpha_composite(bg.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(120))).convert("RGB")
     d = ImageDraw.Draw(bg, "RGBA")
-    f = fit_font(d, spec.get("title", ""), 70, 960)
+    d.rounded_rectangle((45, STAGE_TOP - 15, W - 45, STAGE_BOT + 5), radius=44, fill=(255, 255, 255, 12), outline=(255, 255, 255, 34), width=3)
+    f = fit_font(d, spec.get("title", ""), 76, 960)
     shadowed(d, ((W - text_w(d, spec.get("title", ""), f)) / 2, 96), spec.get("title", ""), f, TEXT)
     sf_ = fit_font(d, spec.get("subtitle", ""), 36, 980, False)
     d.text((W / 2, 205), spec.get("subtitle", ""), font=sf_, fill=LABEL, anchor="mm")
@@ -332,7 +426,7 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     def step_sprite(rn, dim):
         k = (id(rn), dim)
         if k not in line_cache:
-            f2 = font(48, False)
+            f2 = font(50, False)
             tmp = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
             total_w = sum(text_w(tmp, s, f2) for s, _ in rn)
             im = Image.new("RGBA", (int(total_w) + 20, 64), (0, 0, 0, 0))

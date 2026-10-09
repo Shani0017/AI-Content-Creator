@@ -38,6 +38,7 @@ main{position:relative;z-index:1;flex:1;min-width:0;padding:34px clamp(20px,4vw,
 .hero p{color:var(--muted);margin-top:8px;max-width:640px;line-height:1.55}
 .hero.slim{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 24px}.hero.slim p{flex-basis:100%}
 .hero.slim .btn{margin-left:auto}
+a{color:#7fe6ff}
 code{background:var(--panel-2);padding:2px 7px;border-radius:7px;font-size:.9em}
 
 .banner{display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:24px;border-radius:16px;
@@ -135,3 +136,5 @@ select option{background:#14162a}
 .modal video{max-height:84vh;max-width:92vw;border-radius:18px;box-shadow:0 40px 100px -20px #000;background:#000}
 [hidden]{display:none!important}
 ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
+
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

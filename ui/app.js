@@ -11,6 +11,7 @@ const toast = (msg, kind = "") => {
   t.className = "toast " + kind; t.textContent = msg;
   $("#toasts").appendChild(t); setTimeout(() => t.remove(), 4800);
 };
+const mediaUrl = rel => "/media/" + rel.split("/").map(encodeURIComponent).join("/");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 let S = { status: null, catalog: null, type: null, form: {}, recipe: null, jobs: [] };
@@ -185,11 +186,11 @@ async function loadLibrary() {
   const lib = await api("/api/library");
   $("#libCount").textContent = lib.length;
   $("#library").innerHTML = lib.length ? lib.map((v, i) => `
-    <div class="vid" data-i="${i}"><img loading="lazy" src="/media/${encodeURI(v.path.replace(/[^/]+$/, v.poster))}" alt="">
+    <div class="vid" data-i="${i}"><img loading="lazy" src="${mediaUrl(v.path.replace(/[^/]+$/, v.poster))}" alt="">
       <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></div>
       <div class="meta">${esc(v.name)}<small>${(v.size / 1048576).toFixed(1)} MB · ${label(v.kind)}</small></div></div>`).join("")
     : `<div class="empty" style="grid-column:1/-1">No videos yet. Make one from the Create page.</div>`;
-  $$(".vid").forEach(el => el.onclick = () => { const v = lib[+el.dataset.i]; $("#player").src = "/media/" + encodeURI(v.path); $("#modal").hidden = false; $("#player").play(); });
+  $$(".vid").forEach(el => el.onclick = () => { const v = lib[+el.dataset.i]; $("#player").src = mediaUrl(v.path); $("#modal").hidden = false; $("#player").play(); });
 }
 $("#closeModal").onclick = $("#modal").onclick = e => { if (e.target.id === "modal" || e.target.id === "closeModal") { $("#modal").hidden = true; $("#player").pause(); } };
 $("#openFolder").onclick = () => api("/api/open-folder", {});
@@ -212,7 +213,7 @@ function renderSettings() {
   $("#checks").innerHTML = [
     ["Video engine (ffmpeg)", st.tools.ffmpeg, "built in"],
     ["Voice-over (Kokoro)", st.tools.voice, st.tools.voice ? "ready" : "download needed"],
-    ["Subtitles / timing (Whisper)", true, "downloads itself on first use"],
+    ["Word timing (Whisper)", true, "on first use"],
     ["Ollama", ol.up, ol.up ? ol.models.length + " model(s)" : "not running"],
   ].map(([n, ok, note]) => `<li><i class="${ok ? "ok" : ""}">${ok ? "✓" : "!"}</i>${n}<em>${note}</em></li>`).join("");
   $("#dlVoice").disabled = st.tools.voice;
