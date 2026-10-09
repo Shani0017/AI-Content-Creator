@@ -246,4 +246,8 @@ $("#updBtn").onclick = async () => {
   S.catalog = await api("/api/catalog");
   poll(); loadLibrary();
   setInterval(loadStatus, 5 * 60 * 1000);
+  // deep links: #library, #settings, #type=math  (used for the README screenshots)
+  const h = location.hash.slice(1);
+  if (h === "library" || h === "settings") $(`nav a[data-page=${h}]`).click();
+  if (h.startsWith("type=")) openComposer(h.slice(5));
 })();

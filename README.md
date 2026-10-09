@@ -8,6 +8,22 @@ Make short vertical videos on your own computer, for free: **math puzzles**, **s
 - Voice-over with **Kokoro** (offline), timing with **Whisper** (offline), video with **ffmpeg** (bundled)
 - Built-in **auto-update**: a banner appears when a new version is published; one click updates and keeps your videos
 
+## Screenshots
+
+<p align="center"><img src="docs/screenshots/create-math.png" alt="Create page with the Math composer and the live queue" width="900"></p>
+
+| Music Balls | From a reference link |
+|---|---|
+| <img src="docs/screenshots/create-music.png" alt="Music composer"> | <img src="docs/screenshots/reference.png" alt="Reference link composer"> |
+
+| Library | Settings and AI model |
+|---|---|
+| <img src="docs/screenshots/library.png" alt="Library"> | <img src="docs/screenshots/settings.png" alt="Settings"> |
+
+**A generated math video** (frames from a real render):
+
+<p align="center"><img src="docs/screenshots/video-math.jpg" alt="Frames from a generated math video" width="760"></p>
+
 ## Install (Windows)
 
 1. Install **Python 3.10+** from python.org (tick *Add python.exe to PATH*).
