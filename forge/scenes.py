@@ -276,7 +276,7 @@ def avgspeed(c):
         tw = 760.0 / (a + b)
         c.txt("same road, so time:", CX, 790, 38, DIM, anchor="mm")
         c.d.rounded_rectangle((150, 830, 150 + b * tw * ease(t - 2), 900), radius=14, fill=th["y"] + (255,))
-        c.d.rounded_rectangle((150 + b * tw, 830, 150 + (b + a) * tw * ease(t - 2.3), 900), radius=14, fill=th["g"] + (255,))
+        c.d.rounded_rectangle((150 + b * tw, 830, 150 + b * tw + a * tw * ease(t - 2.3) + 1, 900), radius=14, fill=th["g"] + (255,))
         c.txt(f"{b} h", 150 + b * tw / 2, 865, 36, (16, 22, 52), shadow=False)
         c.txt(f"{a} h", 150 + b * tw + a * tw / 2, 865, 36, (16, 22, 52), shadow=False)
     if t >= 4:

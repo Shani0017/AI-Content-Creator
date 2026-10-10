@@ -447,8 +447,9 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     d.rounded_rectangle((45, STAGE_TOP - 15, W - 45, STAGE_BOT + 5), radius=44, fill=(255, 255, 255, 12), outline=(255, 255, 255, 34), width=3)
     f = fit_font(d, spec.get("title", ""), 76, 960)
     shadowed(d, ((W - text_w(d, spec.get("title", ""), f)) / 2, 96), spec.get("title", ""), f, TEXT)
-    sf_ = fit_font(d, spec.get("subtitle", ""), 36, 980, False)
-    d.text((W / 2, 205), spec.get("subtitle", ""), font=sf_, fill=LABEL, anchor="mm")
+    sub = _plain(spec.get("subtitle", ""))
+    sf_ = fit_font(d, sub, 36, 980, False)
+    d.text((W / 2, 205), sub, font=sf_, fill=LABEL, anchor="mm")
     tags = spec.get("tags") or []
     tf = font(26, False)
     tw = [text_w(d, tg, tf) + 40 for tg in tags]
