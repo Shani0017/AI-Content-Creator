@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.0
+- New Publish page: schedule videos on a Facebook Page (native scheduling), host them for Instagram, build a mixed Math/ASMR/Music/Story plan, download a ready VPS package, and check that everything matches.
+
 ## 1.1.1
 - Math scenes: fixed a crash in the round-trip scene and symbols in subtitles.
 

@@ -22,6 +22,7 @@ $$("nav a").forEach(a => a.onclick = () => {
   $$(".page").forEach(p => p.classList.toggle("on", p.id === "page-" + a.dataset.page));
   if (a.dataset.page === "library") loadLibrary();
   if (a.dataset.page === "settings") renderSettings();
+  if (a.dataset.page === "publish") loadPublish();
 });
 
 /* ---------------- composer ---------------- */
@@ -179,7 +180,7 @@ async function poll() {
   if (!S.seenDone) S.seenDone = new Set(S.jobs.filter(j => j.state === "done").map(j => j.id));
   S.jobs.filter(j => j.state === "done" && !S.seenDone.has(j.id)).forEach(j => { S.seenDone.add(j.id); if (j.kind !== "reference") { toast("Finished — see Library", "good"); loadLibrary(); } });
 }
-const label = k => ({ math: "Math & Puzzles", balls: "Satisfying Balls", music: "Music Balls", story: "Story & Facts", reference: "Studying reference", setup: "Downloading voice files", pull: "Downloading AI model" }[k] || k);
+const label = k => ({ math: "Math & Puzzles", balls: "Satisfying Balls", music: "Music Balls", story: "Story & Facts", reference: "Studying reference", setup: "Downloading voice files", pull: "Downloading AI model", publish: "Publishing to Facebook" }[k] || k);
 
 /* ---------------- library ---------------- */
 async function loadLibrary() {
@@ -241,6 +242,40 @@ $("#updBtn").onclick = async () => {
   } catch (e) { toast("Update failed: " + e.message, "bad"); $("#updBtn").disabled = false; $("#updBtn").textContent = "Update now"; }
 };
 
+/* ---------------- publish ---------------- */
+const PUB = ["brand", "ig_user_id", "ig_token", "fb_page_id", "fb_page_token", "github_repo", "github_token", "slots"];
+const pubForm = { per_day: 8, days: 3 };
+async function loadPublish() {
+  const c = await api("/api/publish/config");
+  PUB.forEach(k => { const el = $("#p_" + k); if (el) el.value = c[k] || ""; });
+  const r = c.ready;
+  $("#pubReady").innerHTML = ["instagram", "facebook", "hosting"].map(k => `<span class="tag" style="${r[k] ? "" : "background:rgba(255,92,138,.18);color:#ff9bb5"}">${k}: ${r[k] ? "ready" : "missing"}</span>`).join("");
+}
+$$("#page-publish .stepper").forEach(st => $$("button", st).forEach(b => b.onclick = () => {
+  const v = Math.max(+st.dataset.min, Math.min(+st.dataset.max, pubForm[st.dataset.key] + (+b.dataset.d)));
+  pubForm[st.dataset.key] = v; $("b", st).textContent = v;
+}));
+$("#pubSave").onclick = async () => {
+  const body = {}; PUB.forEach(k => body[k] = $("#p_" + k).value.trim());
+  await api("/api/publish/config", body); toast("Saved", "good"); loadPublish();
+};
+const table = (rows, cols) => rows.length ? `<div style="overflow:auto;max-height:340px;margin-top:14px"><table style="width:100%;border-collapse:collapse;font-size:13px">` +
+  `<tr>${cols.map(c => `<th style="text-align:left;padding:6px 8px;color:var(--muted)">${c[1]}</th>`).join("")}</tr>` +
+  rows.map(r => `<tr style="border-top:1px solid var(--line)">${cols.map(c => `<td style="padding:6px 8px">${esc(r[c[0]])}</td>`).join("")}</tr>`).join("") + `</table></div>` : `<p class="muted">Nothing to show yet.</p>`;
+$("#pubPreview").onclick = async () => {
+  try { const plan = await api("/api/publish/plan", pubForm); $("#pubTable").innerHTML = table(plan, [["n", "#"], ["time", "When"], ["type", "Type"], ["name", "Video"]]); }
+  catch (e) { toast(e.message, "bad"); }
+};
+$("#pubRun").onclick = async () => {
+  if (!confirm("This schedules public posts on your Facebook Page and uploads the videos for Instagram. Continue?")) return;
+  try { await api("/api/publish/run", pubForm); toast("Publishing started - watch the queue on the Create page", "good"); poll(); }
+  catch (e) { toast(e.message, "bad"); }
+};
+$("#pubVerify").onclick = async () => {
+  const rows = await api("/api/publish/verify");
+  $("#pubVerifyTable").innerHTML = table(rows, [["n", "#"], ["time", "When"], ["name", "Video"], ["facebook", "Facebook"], ["link", "Video link"]]);
+};
+
 /* ---------------- boot ---------------- */
 (async function () {
   await loadStatus();
@@ -249,6 +284,6 @@ $("#updBtn").onclick = async () => {
   setInterval(loadStatus, 5 * 60 * 1000);
   // deep links: #library, #settings, #type=math  (used for the README screenshots)
   const h = location.hash.slice(1);
-  if (h === "library" || h === "settings") $(`nav a[data-page=${h}]`).click();
+  if (h === "library" || h === "settings" || h === "publish") $(`nav a[data-page=${h}]`).click();
   if (h.startsWith("type=")) openComposer(h.slice(5));
 })();

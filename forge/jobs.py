@@ -62,6 +62,12 @@ def _run(job):
     if kind == "pull":
         llm.pull(params["model"], cb)
         return []
+    if kind == "publish":
+        from . import publisher
+        plan = publisher.build_plan(int(params.get("per_day", 8)), int(params.get("days", 3)), params.get("start", ""))
+        r = publisher.run_plan(plan, cb)
+        job["message"] = f"Scheduled {r['scheduled']} videos"
+        return []
     if kind == "reference":
         recipe = reference.analyze(params["url"], cb)
         job["recipe"] = recipe

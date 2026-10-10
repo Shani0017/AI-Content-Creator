@@ -18,6 +18,7 @@
   <nav>
     <a data-page="create" class="on"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
     <a data-page="library"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>Library <span class="count" id="libCount">0</span></a>
+    <a data-page="publish"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg>Publish</a>
     <a data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14.1 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Settings</a>
   </nav>
   <div class="health" id="health"></div>
@@ -74,6 +75,45 @@
     <header class="hero slim"><h1>Library</h1><p>Everything you have made. Videos are saved in the <code>output</code> folder.</p>
       <button class="btn ghost" id="openFolder">Open folder</button></header>
     <div class="grid library" id="library"></div>
+  </section>
+
+  <!-- PUBLISH -->
+  <section class="page" id="page-publish">
+    <header class="hero slim"><h1>Publish</h1><p>Schedule your videos on a Facebook Page and Instagram, a few days at a time. Facebook is scheduled by the app; Instagram is posted by a tiny script on your server (VPS).</p></header>
+    <div class="grid two">
+      <div class="panel">
+        <h3>1. Accounts</h3>
+        <p class="muted" id="pubReady"></p>
+        <label>Your name / brand</label><input id="p_brand" placeholder="e.g. FragSpree">
+        <label>Instagram user ID</label><input id="p_ig_user_id">
+        <label>Instagram token</label><input id="p_ig_token" type="password" autocomplete="off">
+        <label>Facebook Page ID</label><input id="p_fb_page_id">
+        <label>Facebook Page token</label><input id="p_fb_page_token" type="password" autocomplete="off">
+        <label>GitHub repo for hosting (owner/name, public)</label><input id="p_github_repo" placeholder="you/my-media">
+        <label>GitHub token (repo access)</label><input id="p_github_token" type="password" autocomplete="off">
+        <label>Post times (comma separated, 24h)</label><input id="p_slots">
+        <div class="row"><button class="btn primary" id="pubSave">Save</button><span class="muted">Tokens stay on this computer.</span></div>
+      </div>
+      <div class="panel">
+        <h3>2. Plan and schedule</h3>
+        <label>Posts per day</label><div class="stepper" data-key="per_day" data-min="1" data-max="12"><button data-d="-1">&minus;</button><b>8</b><button data-d="1">+</button></div>
+        <label>Days</label><div class="stepper" data-key="days" data-min="1" data-max="30"><button data-d="-1">&minus;</button><b>3</b><button data-d="1">+</button></div>
+        <div class="row"><button class="btn" id="pubPreview">Preview plan</button><button class="btn primary" id="pubRun">Schedule on Facebook + publish plan</button></div>
+        <p class="muted">The app mixes your Math, Balls (ASMR), Music and Story videos, hosts them, schedules Facebook, and writes the plan file for Instagram. Originals go to the Recycle Bin once uploaded.</p>
+        <div id="pubTable"></div>
+      </div>
+      <div class="panel">
+        <h3>3. Instagram on your server</h3>
+        <p class="muted">Download the package, copy it to your VPS and follow README.txt (5 commands). It posts each reel at its time, even when this computer is off.</p>
+        <div class="row"><a class="btn" href="/api/publish/vps.zip">Download VPS package</a></div>
+      </div>
+      <div class="panel">
+        <h3>4. Check</h3>
+        <p class="muted">Compares what was scheduled with what is on Facebook (time and caption) and that every video link works.</p>
+        <div class="row"><button class="btn" id="pubVerify">Check posts</button></div>
+        <div id="pubVerifyTable"></div>
+      </div>
+    </div>
   </section>
 
   <!-- SETTINGS -->

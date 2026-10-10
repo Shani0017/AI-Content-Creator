@@ -6,9 +6,9 @@ import threading
 import time
 import webbrowser
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 
-from forge import ROOT, VERSION, gens, jobs, llm, paths, settings, speech, updater
+from forge import ROOT, VERSION, gens, jobs, llm, paths, publisher, settings, speech, updater
 
 PORT = int(os.environ.get("FORGE_PORT", "8765"))
 app = Flask(__name__, static_folder=str(ROOT / "ui"), static_url_path="/ui")
@@ -84,6 +84,39 @@ def update_apply():
     res = updater.apply()
     threading.Timer(0.8, updater.restart).start()
     return jsonify(res)
+
+
+@app.get("/api/publish/config")
+def pub_config():
+    return jsonify(publisher.public())
+
+
+@app.post("/api/publish/config")
+def pub_save():
+    return jsonify(publisher.save(request.get_json(force=True) or {}))
+
+
+@app.post("/api/publish/plan")
+def pub_plan():
+    d = request.get_json(force=True) or {}
+    plan = publisher.build_plan(int(d.get("per_day", 8)), int(d.get("days", 3)), d.get("start", ""))
+    return jsonify([{k: r[k] for k in ("n", "time", "type", "name", "caption")} for r in plan])
+
+
+@app.post("/api/publish/run")
+def pub_run():
+    d = request.get_json(force=True) or {}
+    return jsonify(jobs.submit("publish", {"per_day": d.get("per_day", 8), "days": d.get("days", 3), "start": d.get("start", "")}))
+
+
+@app.get("/api/publish/verify")
+def pub_verify():
+    return jsonify(publisher.verify())
+
+
+@app.get("/api/publish/vps.zip")
+def pub_vps():
+    return Response(publisher.vps_package(), mimetype="application/zip", headers={"Content-Disposition": "attachment; filename=vps-poster.zip"})
 
 
 def _open_browser():

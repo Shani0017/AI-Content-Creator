@@ -55,6 +55,12 @@ That is it. Pick a style on the **Create** page and press **Generate**. Finished
 | Story & Facts | You give a topic, the AI writes an original script, the app voices it with big keywords on screen. |
 | From a reference link | Paste a link. The app downloads it only to *study* it (pacing, colours, topic, tone) and then makes a **new, original** video in that style. |
 
+## Publish (Facebook + Instagram)
+
+Open the **Publish** page, enter your Instagram / Facebook IDs and tokens and a public GitHub repo for hosting, choose posts per day and days, and press *Schedule*.
+Facebook posts are scheduled natively. Instagram is posted by a tiny script on your server: download the VPS package from the same page (Windows or Linux, Python only).
+Tokens stay in `data/publish.json` on your computer and are never uploaded.
+
 ## Updating
 
 When the maintainer publishes a new version you see a banner at the top of the app. Click **Update now** - your videos, models and settings are kept.
