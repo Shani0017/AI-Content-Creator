@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.4
+- Updates: always asks GitHub for the newest version (no stale cache, checks every 10 minutes), shows the version you have and the latest, shows errors, and adds an Update now button in Settings.
+
 ## 1.3.3
 - Guide: full step-by-step VPS checklist (Windows and Linux): connect, install Python, copy the files, token check, start-on-boot, what to expect, fixes. The VPS package README matches.
 

@@ -30,20 +30,20 @@ def _ver(v):
 
 
 def check(force=False) -> dict:
-    if not force and time.time() - _state["checked"] < 1800:
+    if not force and time.time() - _state["checked"] < 600:
         return dict(_state, current=VERSION)
     try:
-        latest = requests.get(RAW + "/VERSION", timeout=6).text.strip()
+        latest = requests.get(RAW + "/VERSION", params={"t": int(time.time())}, headers={"Cache-Control": "no-cache"}, timeout=8).text.strip()
         notes = ""
         try:
-            notes = requests.get(RAW + "/CHANGELOG.md", timeout=6).text
+            notes = requests.get(RAW + "/CHANGELOG.md", params={"t": int(time.time())}, timeout=8).text
             first = notes.split("\n## ")
             notes = ("## " + first[1] if len(first) > 1 else notes)[:900]
         except Exception:
             pass
         _state.update(checked=time.time(), latest=latest, notes=notes, available=_ver(latest) > _ver(VERSION), error="")
     except Exception as e:
-        _state.update(checked=time.time(), error=str(e)[:120])
+        _state.update(checked=time.time(), error="Could not reach GitHub (" + str(e)[:80] + "). Check the internet connection.")
     return dict(_state, current=VERSION)
 
 

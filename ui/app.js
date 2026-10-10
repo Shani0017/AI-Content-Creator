@@ -221,6 +221,7 @@ async function loadStatus() {
     .map(([n, ok]) => `<div><i class="${ok ? "ok" : ""}"></i>${n}</div>`).join("");
   const u = st.update || {};
   $("#updateBanner").hidden = !u.available;
+  if (typeof paintUpdate === "function") paintUpdate(u);
   if (u.available) { $("#updTitle").textContent = `Version ${u.latest} is available`; $("#updNotes").textContent = (u.notes || "").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => l.replace(/^[-*]\s*/, "")).slice(0, 2).join("  ·  ") || "New features and fixes."; }
 }
 function renderSettings() {
@@ -251,11 +252,27 @@ $("#quitApp").onclick = async () => {
   try { await api("/api/quit", {}); } catch { }
   document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;font:600 20px Segoe UI;color:#cfd3f5;background:#0a0b14">The app has closed. You can close this tab.</div>';
 };
+function paintUpdate(r) {
+  const st = $("#updState"), btn = $("#updNow");
+  if (!st) return;
+  if (r.error) { st.textContent = r.error; btn.hidden = true; return; }
+  st.textContent = r.available ? `You have v${r.current}. Version ${r.latest} is ready.` : `You have v${r.current}. You are up to date (latest is v${r.latest}).`;
+  btn.hidden = !r.available;
+}
+async function doUpdate(btn) {
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "Updating...";
+  try {
+    await api("/api/update/apply", {});
+    toast("Updated. Restarting...", "good");
+    const wait = setInterval(async () => { try { await api("/api/status"); clearInterval(wait); location.reload(); } catch { } }, 1500);
+  } catch (e) { toast("Update failed: " + e.message, "bad"); btn.disabled = false; btn.textContent = old; }
+}
 $("#checkUpd").onclick = async () => {
-  const r = await api("/api/update/check", {});
-  $("#updState").textContent = r.available ? `Version ${r.latest} is available` : "You are up to date";
+  $("#updState").textContent = "Checking...";
+  try { paintUpdate(await api("/api/update/check", {})); } catch (e) { $("#updState").textContent = "Could not check: " + e.message; }
   loadStatus();
 };
+$("#updNow").onclick = () => doUpdate($("#updNow"));
 $("#updBtn").onclick = async () => {
   $("#updBtn").disabled = true; $("#updBtn").textContent = "Updating…";
   try {
