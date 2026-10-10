@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.0
+- Reference links: after the analysis the app starts making the closest video by itself (no questions). Options to make more or change the style are tucked away below. The music scene is chosen from what the reference is about.
+
 ## 1.3.5
 - Update check uses GitHub's API so a new version shows up immediately (the raw link could lag by minutes).
 

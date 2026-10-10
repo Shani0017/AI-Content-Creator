@@ -129,6 +129,16 @@ function darkest(pal) {
   const c = [...pal].sort((a, b) => lum(a) - lum(b))[0];
   return c.map(v => Math.round(v * 0.35));
 }
+function refParams(r, n, kind) {
+  const st = r.stats || {};
+  const ideasOk = (r.new_topic_ideas || []).filter(x => x && x.length > 6);
+  const p = { count: n, palette: r.palette, bg: darkest(r.palette), pace: r.pacing || st.pacing, duration: st.duration_s,
+    style: { tone: r.tone, pacing: r.pacing, hook: r.hook, title_style: r.title_style },
+    topics: ideasOk.length ? ideasOk : [r.topic || r.source_title || "a surprising fact"], topic: r.topic };
+  if (kind === "math") p.source = "mixed";
+  if (kind === "music" && r.palette?.length) p.hue = hueOf(r.palette);
+  return p;
+}
 function showRecipe(r) {
   S.recipe = r;
   const sw = (r.palette || []).map(c => `<i style="background:rgb(${c.join(",")})"></i>`).join("");
@@ -147,27 +157,24 @@ function showRecipe(r) {
     </div>
     <div class="note-box"><b>What the new video copies:</b> the colours, the pace, the length and (for spoken videos) the topic and tone.
       <b>What it can't copy:</b> the exact pictures - it is built from the closest style the app has.</div>
-    <label>Make it as <span class="muted" style="text-transform:none;letter-spacing:0">(recommended: ${esc(kind0)})</span></label>
-    ${seg("refkind", [["math", "Math & Puzzles"], ["story", "Story & Facts"], ["balls", "Satisfying Balls"], ["music", "Music Balls"]], kind0)}
-    <label>How many videos?</label>${stepper("count", 3, 1, 20)}
-    <div class="row"><button class="btn primary" id="makeLike">Make videos like this</button></div>`;
+    <div class="auto-box" id="autoBox"><b>Making your video now.</b> The app picked the closest style: <b>${esc(kindName(kind0))}</b>.
+      Watch the <b>Queue</b> on the right; it shows up in the Library when it finishes.</div>
+    <details class="gd mini"><summary>Make more videos or choose a different style</summary><div class="gd-body">
+      <label>Style</label>
+      ${seg("refkind", [["math", "Math & Puzzles"], ["story", "Story & Facts"], ["balls", "Satisfying Balls"], ["music", "Music Balls"]], kind0)}
+      <label>How many videos?</label>${stepper("count", 3, 1, 20)}
+      <div class="row"><button class="btn primary" id="makeLike">Make videos like this</button></div>
+    </div></details>`;
   const box = $("#recipeBox");
   $$(".seg", box).forEach(sg => $$("button", sg).forEach(b => b.onclick = () => { $$("button", sg).forEach(x => x.classList.toggle("on", x === b)); S.form[sg.dataset.key] = b.dataset.v; }));
   $$(".stepper", box).forEach(stp => $$("button", stp).forEach(b => b.onclick = () => {
     const v = Math.max(+stp.dataset.min, Math.min(+stp.dataset.max, S.form[stp.dataset.key] + (+b.dataset.d)));
     S.form[stp.dataset.key] = v; $("b", stp).textContent = v;
   }));
-  $("#makeLike").onclick = async () => {
-    const kind = S.form.refkind, n = S.form.count;
-    const ideasOk = (r.new_topic_ideas || []).filter(x => x && x.length > 6);
-    const params = { count: n, palette: r.palette, bg: darkest(r.palette), pace: r.pacing || st.pacing, duration: st.duration_s,
-      style: { tone: r.tone, pacing: r.pacing, hook: r.hook, title_style: r.title_style },
-      topics: ideasOk.length ? ideasOk : [r.topic || r.source_title || "a surprising fact"], topic: r.topic };
-    if (kind === "math") params.source = "mixed";
-    if (kind === "music" && r.palette?.length) params.hue = hueOf(r.palette);
-    await enqueue(kind, params);
-  };
+  $("#makeLike").onclick = async () => { await enqueue(S.form.refkind, refParams(r, S.form.count, S.form.refkind)); };
+  if (!r._started) { r._started = true; enqueue(kind0, refParams(r, 1, kind0)); }
 }
+const kindName = k => ({ math: "Math & Puzzles", story: "Story & Facts", balls: "Satisfying Balls", music: "Music Balls" }[k] || k);
 function hueOf(pal) {
   let best = pal[0], bs = -1;
   pal.forEach(([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), s = mx ? (mx - mn) / mx : 0; if (s * mx > bs) { bs = s * mx; best = [r, g, b]; } });

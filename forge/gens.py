@@ -82,7 +82,15 @@ def music(params, out_dir, progress):
     import audit2, core, sims_i
     count = int(params.get("count", 1))
     songs = params.get("songs") or list(sims_i.SONGS)
-    scenes = params.get("scenes") or list(sims_i.ORDER)
+    scenes = params.get("scenes")
+    if not scenes:                                      # reference given: choose the scene that matches its description
+        hint = f"{params.get('topic', '')} {(params.get('style') or {}).get('hook', '')}".lower()
+        for key, sc in (("xylophone", "xylo"), ("piano", "xylo"), ("drum", "drum"), ("bell", "bell"), ("glass", "glass"),
+                        ("brick", "brick"), ("bounc", "pads"), ("ball", "pads"), ("marble", "pads")):
+            if key in hint:
+                scenes = [sc]
+                break
+    scenes = scenes or list(sims_i.ORDER)
     rng = random.Random(params.get("seed") or time.time())
     theme_hue = params.get("hue")
     out = []
