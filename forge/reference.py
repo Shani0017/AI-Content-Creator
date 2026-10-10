@@ -22,7 +22,7 @@ def download(url: str, progress=None) -> str:
     files = sorted(out.glob("ref.*"))
     if not files:
         raise RuntimeError("Could not download that link. Try a direct video link.")
-    return str(files[0]), {"title": info.get("title", ""), "uploader": info.get("uploader", "")}
+    return str(files[0]), {"title": info.get("title", "") or "", "uploader": info.get("uploader", ""), "description": (info.get("description") or "")[:600]}
 
 
 def _run(cmd):
@@ -93,7 +93,11 @@ def analyze(url: str, progress=None) -> dict:
     except Exception:
         transcript = ""
     p(0.75, "Asking the AI to study it")
-    recipe = llm.analyze_reference(transcript or meta.get("title", ""), st)
-    recipe.update({"stats": st, "palette": [list(c) for c in pal], "transcript": transcript[:1500], "source_title": meta.get("title", "")})
+    try:
+        recipe = llm.analyze_reference(transcript, st, meta.get("title", ""), meta.get("description", ""))
+    except Exception:                                   # no model installed / Ollama off: still give a useful recipe from the measurements
+        recipe = llm.heuristic_recipe(transcript, meta.get("title", ""), meta.get("description", ""), st)
+    recipe.update({"stats": st, "palette": [list(c) for c in pal], "transcript": transcript[:1500], "source_title": meta.get("title", ""),
+                   "has_speech": len(transcript.split()) >= 8})
     p(1.0, "Analysis ready")
     return recipe

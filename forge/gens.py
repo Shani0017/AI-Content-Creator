@@ -58,7 +58,10 @@ def balls(params, out_dir, progress):
         cls = pool[k % len(pool)] if chosen else rng.choice(pool)
         for _ in range(12):
             seed = rng.randint(1, 10 ** 6)
-            C = type(cls.__name__ + "_s", (cls,), {"SEED": seed})
+            attrs = {"SEED": seed}
+            if params.get("bg"):
+                attrs["BG"] = tuple(int(v) for v in params["bg"])
+            C = type(cls.__name__ + "_s", (cls,), attrs)
             progress((k + 0.1) / count, f"Checking physics ({cls.__name__})")
             name, length, issues, _ = audit2.audit(C)
             if not issues:
@@ -89,6 +92,14 @@ def music(params, out_dir, progress):
         C, title, th = sims_i.themed(kind, song, rng.randint(0, 9999))
         if theme_hue is not None:
             th["hue"] = float(theme_hue)
+        if params.get("bg"):
+            C.BG = tuple(int(v) for v in params["bg"])
+        if params.get("duration"):
+            C.TARGET = float(min(60, max(20, params["duration"])))
+        if params.get("pace") == "fast":
+            C.STEPS = [x * 0.85 for x in C.STEPS]
+        elif params.get("pace") == "slow":
+            C.STEPS = [x * 1.2 for x in C.STEPS]
         sims_i.activate(th)
         ok = False
         for seed in range(3, 12):
@@ -166,7 +177,8 @@ def story(params, out_dir, progress):
     for k in range(count):
         topic = topics[k % len(topics)]
         progress(k / count, f"Writing the script ({topic})")
-        d = llm.story_script(topic, style, beats=int(params.get("beats", 6)))
+        beats_n = int(params.get("beats") or max(4, min(9, round((params.get("duration") or 36) / 6))))
+        d = llm.story_script(topic, style, beats=beats_n)
         beats = []
         for b in d["beats"]:
             beats.append(dict(say=b["say"], cards=[b["key"]] if b.get("key") else None, steps=[x for x in (b.get("bullets") or [])][:3]))

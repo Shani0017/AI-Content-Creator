@@ -123,34 +123,48 @@ async function analyze() {
     }, 1000);
   } catch (e) { $("#analyze").disabled = false; toast(e.message, "bad"); }
 }
+function darkest(pal) {
+  if (!pal || !pal.length) return null;
+  const lum = c => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  const c = [...pal].sort((a, b) => lum(a) - lum(b))[0];
+  return c.map(v => Math.round(v * 0.35));
+}
 function showRecipe(r) {
   S.recipe = r;
   const sw = (r.palette || []).map(c => `<i style="background:rgb(${c.join(",")})"></i>`).join("");
   const ideas = (r.new_topic_ideas || []).map(esc).join("<br>• ");
+  const st = r.stats || {};
+  const kind0 = ["balls", "music", "math", "story"].includes(r.category) ? r.category : "story";
   $("#recipeBox").innerHTML = `
     <div class="recipe">
-      <div><span class="tag">${esc(r.category)}</span><span class="tag">${esc(r.pacing || r.stats?.pacing)}</span><span class="tag">${esc(r.tone || "")}</span></div>
+      <div><span class="tag">${esc(r.category)}</span><span class="tag">${esc(r.pacing || st.pacing || "")}</span><span class="tag">${esc(r.tone || "")}</span>
+        <span class="tag" style="background:rgba(255,255,255,.1);color:#c9d2ff">${r.from === "ai" ? "studied by AI" : "studied by rules (AI gave no usable answer)"}</span></div>
       <div><b>About:</b> ${esc(r.topic || r.source_title)}</div>
-      <div><b>Opens with:</b> ${esc(r.hook || "—")}</div>
+      <div><b>Opens with:</b> ${esc(r.hook || "-")}</div>
       <div class="swatches">${sw}</div>
-      <div><b>New ideas in this style:</b><br>• ${ideas || "—"}</div>
+      <div><b>Length:</b> ${st.duration_s || "?"} s &middot; <b>cuts:</b> ${st.cuts ?? "?"} &middot; <b>speech:</b> ${r.has_speech ? "yes" : "no"}</div>
+      <div><b>New ideas in this style:</b><br>• ${ideas || "-"}</div>
     </div>
-    <label>Make it as</label>
-    ${seg("refkind", [["math", "Math & Puzzles"], ["story", "Story & Facts"], ["balls", "Satisfying Balls"], ["music", "Music Balls"]], ["balls", "music", "math", "story"].includes(r.category) ? r.category : "story")}
+    <div class="note-box"><b>What the new video copies:</b> the colours, the pace, the length and (for spoken videos) the topic and tone.
+      <b>What it can't copy:</b> the exact pictures - it is built from the closest style the app has.</div>
+    <label>Make it as <span class="muted" style="text-transform:none;letter-spacing:0">(recommended: ${esc(kind0)})</span></label>
+    ${seg("refkind", [["math", "Math & Puzzles"], ["story", "Story & Facts"], ["balls", "Satisfying Balls"], ["music", "Music Balls"]], kind0)}
     <label>How many videos?</label>${stepper("count", 3, 1, 20)}
     <div class="row"><button class="btn primary" id="makeLike">Make videos like this</button></div>`;
   const box = $("#recipeBox");
   $$(".seg", box).forEach(sg => $$("button", sg).forEach(b => b.onclick = () => { $$("button", sg).forEach(x => x.classList.toggle("on", x === b)); S.form[sg.dataset.key] = b.dataset.v; }));
-  $$(".stepper", box).forEach(st => $$("button", st).forEach(b => b.onclick = () => {
-    const v = Math.max(+st.dataset.min, Math.min(+st.dataset.max, S.form[st.dataset.key] + (+b.dataset.d)));
-    S.form[st.dataset.key] = v; $("b", st).textContent = v;
+  $$(".stepper", box).forEach(stp => $$("button", stp).forEach(b => b.onclick = () => {
+    const v = Math.max(+stp.dataset.min, Math.min(+stp.dataset.max, S.form[stp.dataset.key] + (+b.dataset.d)));
+    S.form[stp.dataset.key] = v; $("b", stp).textContent = v;
   }));
   $("#makeLike").onclick = async () => {
     const kind = S.form.refkind, n = S.form.count;
-    const params = { count: n, palette: r.palette, style: { tone: r.tone, pacing: r.pacing, hook: r.hook, title_style: r.title_style }, topics: r.new_topic_ideas, topic: r.topic };
+    const ideasOk = (r.new_topic_ideas || []).filter(x => x && x.length > 6);
+    const params = { count: n, palette: r.palette, bg: darkest(r.palette), pace: r.pacing || st.pacing, duration: st.duration_s,
+      style: { tone: r.tone, pacing: r.pacing, hook: r.hook, title_style: r.title_style },
+      topics: ideasOk.length ? ideasOk : [r.topic || r.source_title || "a surprising fact"], topic: r.topic };
     if (kind === "math") params.source = "mixed";
     if (kind === "music" && r.palette?.length) params.hue = hueOf(r.palette);
-    if (kind === "story") params.topics = (r.new_topic_ideas && r.new_topic_ideas.length) ? r.new_topic_ideas : [r.topic];
     await enqueue(kind, params);
   };
 }

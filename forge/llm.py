@@ -106,17 +106,71 @@ def math_problems(n: int, topics: str = "", level: str = "easy to medium") -> li
     return out
 
 
-def analyze_reference(transcript: str, stats: dict) -> dict:
-    return chat_json(
-        "You analyse a short-form video so someone can make a NEW, original video in the same style.\n"
-        f"Stats: {json.dumps(stats)}\nTranscript:\n{transcript[:3500]}\n\n"
-        'Return JSON: {"category": one of ["balls","music","math","story"], "topic": "what it is about in 6 words", '
-        '"hook": "how it opens", "pacing": "fast|medium|slow", "tone": "one or two words", '
-        '"new_topic_ideas": ["3 different original topics in the same style"], "title_style": "how the title is written"}\n'
-        'Use "balls" for satisfying physics / ASMR loops, "music" for melody-played-by-objects, "math" for puzzles / word problems / riddles, '
-        '"story" for facts, tips, explainers, stories or anything spoken.',
-        system="Output JSON only.", temperature=0.3,
-    )
+PLACEHOLDER_BITS = ("how it opens", "explaining something", "3 different", "three different", "6 words", "one or two words", "fast|medium|slow",
+                    "how the title", "same style", "original topic", "ideas in", "topic idea")
+
+
+def _real(v) -> bool:
+    s = str(v or "").strip().lower()
+    return len(s) > 3 and not any(b in s for b in PLACEHOLDER_BITS)
+
+
+def valid_recipe(d) -> bool:
+    return (isinstance(d, dict) and d.get("category") in ("balls", "music", "math", "story") and _real(d.get("topic"))
+            and isinstance(d.get("new_topic_ideas"), list) and sum(_real(x) for x in d["new_topic_ideas"]) >= 2)
+
+
+def heuristic_recipe(transcript: str, title: str, desc: str, stats: dict) -> dict:
+    """no AI needed: category and topic from the words, hashtags and measured pacing"""
+    import re
+    text = f"{title} {desc} {transcript}".lower()
+    words = re.findall(r"[a-z']+", transcript.lower())
+    if re.search(r"#(math|mathpuzzle|riddle|brainteaser|iq)|\b(how many|calculate|solve|equation|percent|riddle|puzzle|plus|minus|times)\b", text):
+        cat = "math"
+    elif re.search(r"#(asmr|satisfying|oddlysatisfying|physics)|\b(asmr|satisfying|marble|balls?)\b", text) and len(words) < 25:
+        cat = "balls"
+    elif re.search(r"#(piano|xylophone|musicvideo|melody)|\b(piano|xylophone|melody|guess the song)\b", text) and len(words) < 25:
+        cat = "music"
+    elif len(words) >= 25:
+        cat = "story"
+    else:
+        cat = "balls"
+    base = re.sub(r"#\w+|https?://\S+", "", title or "").strip() or " ".join(words[:8]) or "a short video"
+    topic = " ".join(base.split()[:9])
+    ideas = {"math": ["a speed and distance word problem", "a percentage trick question", "a counting puzzle with a surprising answer"],
+             "balls": ["balls dropping through pegs", "marbles filling a shape", "a collision chain reaction"],
+             "music": ["a classic lullaby on bells", "a nursery rhyme on a xylophone", "a famous march on drums"],
+             "story": [f"a surprising fact related to {topic[:40]}", f"three myths about {topic[:40]}", f"how {topic[:40]} really works"]}[cat]
+    return {"category": cat, "topic": topic, "hook": "opens straight on the subject" if len(words) else "opens on the visual", "pacing": stats.get("pacing", "medium"),
+            "tone": "informative" if cat in ("story", "math") else "calm", "new_topic_ideas": ideas, "title_style": "short and direct", "from": "heuristic"}
+
+
+EXAMPLE = {"category": "story", "topic": "why cats purr when they are happy", "hook": "opens with a surprising question",
+           "pacing": "fast", "tone": "playful", "new_topic_ideas": ["why dogs tilt their heads", "how birds sleep while flying", "why we yawn when others yawn"],
+           "title_style": "a short question"}
+
+
+def analyze_reference(transcript: str, stats: dict, title: str = "", desc: str = "") -> dict:
+    """AI recipe, checked: placeholder answers (a small model echoing the instructions) are rejected, then retried, then replaced by a rule-based recipe"""
+    ctx = (f"Title: {title[:200]}\nDescription / hashtags: {desc[:400]}\nMeasured: {json.dumps(stats)}\n"
+           f"Spoken words: {transcript[:2500] or '(no speech)'}")
+    prompts = [
+        "Study this short video and describe it so a NEW original video can be made in the same style.\n" + ctx +
+        "\n\nReply with ONE JSON object with exactly these keys: category, topic, hook, pacing, tone, new_topic_ideas, title_style.\n"
+        'category must be one of "balls" (satisfying physics / ASMR), "music" (melody played by objects), "math" (puzzles, riddles), "story" (facts, tips, explainers, anything spoken).\n'
+        "Fill every value with REAL content about THIS video. Example of a correctly filled answer for a different video:\n" + json.dumps(EXAMPLE),
+        "Give a JSON object describing this video. Be specific, no placeholders.\n" + ctx + "\nExample format (different video):\n" + json.dumps(EXAMPLE),
+    ]
+    for pr in prompts:
+        try:
+            d = chat_json(pr, system="You output only a JSON object with real, specific values.", temperature=0.4, retries=0)
+            if valid_recipe(d):
+                d["from"] = "ai"
+                d.setdefault("pacing", stats.get("pacing", "medium"))
+                return d
+        except Exception:
+            pass
+    return heuristic_recipe(transcript, title, desc, stats)
 
 
 def story_script(topic: str, style: dict, beats: int = 6) -> dict:
