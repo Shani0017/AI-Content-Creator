@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1
+- Math scenes: fixed a crash in the round-trip scene and symbols in subtitles.
+
 ## 1.1.0
 - Math videos are now illustrated: every problem draws its own animated scene (cars on a road, a lake filling with lily pads, a clock showing the real time, N people shaking hands, doors, trains and a fly, a stack of logs ...) built from the problem's own numbers.
 - Fixed a wrong explanation in the coupon-order puzzle (percent off first is the cheaper order).
