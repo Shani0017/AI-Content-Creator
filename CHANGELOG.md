@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.5
+- Update check uses GitHub's API so a new version shows up immediately (the raw link could lag by minutes).
+
 ## 1.3.4
 - Updates: always asks GitHub for the newest version (no stale cache, checks every 10 minutes), shows the version you have and the latest, shows errors, and adds an Update now button in Settings.
 

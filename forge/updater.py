@@ -33,10 +33,21 @@ def check(force=False) -> dict:
     if not force and time.time() - _state["checked"] < 600:
         return dict(_state, current=VERSION)
     try:
-        latest = requests.get(RAW + "/VERSION", params={"t": int(time.time())}, headers={"Cache-Control": "no-cache"}, timeout=8).text.strip()
+        def fetch(path):
+            """GitHub's API is always current (the raw link can lag by minutes); fall back to raw"""
+            try:
+                r = requests.get(f"https://api.github.com/repos/{REPO}/contents/{path}", params={"ref": BRANCH},
+                                 headers={"Accept": "application/vnd.github.raw"}, timeout=8)
+                if r.ok:
+                    return r.text
+            except Exception:
+                pass
+            return requests.get(f"{RAW}/{path}", params={"t": int(time.time())}, headers={"Cache-Control": "no-cache"}, timeout=8).text
+
+        latest = fetch("VERSION").strip()
         notes = ""
         try:
-            notes = requests.get(RAW + "/CHANGELOG.md", params={"t": int(time.time())}, timeout=8).text
+            notes = fetch("CHANGELOG.md")
             first = notes.split("\n## ")
             notes = ("## " + first[1] if len(first) > 1 else notes)[:900]
         except Exception:
