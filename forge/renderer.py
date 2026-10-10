@@ -13,7 +13,7 @@ import subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from . import paths, speech
+from . import paths, scenes, speech
 
 W, H, FPS = 1080, 1920, 30
 HEAD, GAP, TAIL = 0.5, 0.28, 1.3
@@ -217,6 +217,10 @@ def two_line_sprite(l1, l2, c2):
 
 
 # ------------------------------------------------------------------ easing
+def clamp01(x):
+    return max(0.0, min(1.0, x))
+
+
 def ease_out_back(x, s=2.2):
     x = max(0.0, min(1.0, x)) - 1
     return 1 + (s + 1) * x ** 3 + s * x ** 2
@@ -307,8 +311,33 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     caps = []       # chunks: (t0, t1, [(word, s, e)])
     last = n - 1
 
+    scene = spec.get("scene")
+    sparams = spec.get("params") or {}
+
+    def row(items):
+        """illustrated reels: key numbers / stamp / answer sit in one row under the illustration"""
+        gap, W_AV, H_AV = 22, 940, 215
+        k = 1.0
+        for it in items:
+            k = min(k, H_AV / it["img"].height)
+        tw = sum(it["img"].width * k for it in items) + gap * (len(items) - 1)
+        if tw > W_AV:
+            k *= W_AV / tw
+        for it in items:
+            if k < 0.999:
+                it["img"] = it["img"].resize((max(2, int(it["img"].width * k)), max(2, int(it["img"].height * k))), Image.LANCZOS)
+        tw = sum(it["img"].width for it in items) + gap * (len(items) - 1)
+        x = 540 - tw / 2
+        cyr = 1160
+        for it in items:
+            it["cx"], it["y"] = int(x + it["img"].width / 2), int(cyr - it["img"].height / 2)
+            x += it["img"].width + gap
+            els.append(it)
+
     def stack(items):
         """items: [dict(img, t0, t1, fx)] -> vertically centred inside the board; scaled down if they would not fit"""
+        if scene:
+            return row(items)
         gap = 30
         avail = STAGE_BOT - STAGE_TOP - 40
         tot = sum(it["img"].height for it in items) + gap * (len(items) - 1)
@@ -329,16 +358,22 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
         t1 = t0 + dur + 0.18
         items = []
         if i == last and sb.get("cta", True):
-            items.append(dict(img=pill_sprite(spec.get("cta_tag", "BRAIN TEASER"), th), t0=t0, t1=total, fx="pop"))
-            items.append(dict(img=two_line_sprite("Follow for more", "brain teasers", th["y"]), t0=t0 + 0.4, t1=total, fx="up"))
+            cta = [dict(img=pill_sprite(spec.get("cta_tag", "BRAIN TEASER"), th), t0=t0, t1=total, fx="pop"),
+                   dict(img=two_line_sprite("Follow for more", "brain teasers", th["y"]), t0=t0 + 0.4, t1=total, fx="up")]
+            gy = 650
+            for it in cta:                      # centred on the board even for illustrated reels
+                it["cx"], it["y"] = 540, gy
+                gy += it["img"].height + 40
+                els.append(it)
             sfx_ev += [(t0, "pop"), (t0 + 0.4, "pop")]
+            cta_start = t0
         else:
             has_ans = bool(sb.get("answer"))
             cards = sb.get("cards")
             found = [(t0 + 0.25 + 0.5 * k, c, "") for k, c in enumerate(cards or [])] if cards else [(t0 + s, tx, lb) for s, tx, lb in number_cards(words)]
             maxc = 2 if (has_ans or sb.get("stamp")) else 3
             for k, (tt, tx, lb) in enumerate(found[:maxc]):
-                size = 128 if len(tx) <= 5 else (100 if len(tx) <= 8 else 78)
+                size = (84 if len(tx) <= 5 else 70) if scene else (128 if len(tx) <= 5 else (100 if len(tx) <= 8 else 78))
                 items.append(dict(img=card_sprite(tx, lb, th["y"], size, maxw=900), t0=max(t0, tt - 0.06), t1=t1, fx=("left", "right", "up")[k % 3]))
                 sfx_ev.append((tt, "pop"))
             if sb.get("stamp"):
@@ -349,17 +384,19 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
                 items.append(dict(img=big_sprite(sb["answer"], th["g"], 190 if len(sb["answer"]) <= 6 else 140), t0=t0 + dur * 0.45, t1=t1, fx="pop"))
                 items.append(dict(img=check_sprite(th["g"], 120), t0=t0 + dur * 0.45 + 0.25, t1=t1, fx="pop"))
                 sfx_ev.append((t0 + dur * 0.45, "chime"))
-            if len(items) < 2 and sb.get("steps") and not has_ans:
+            if scene:
+                pass
+            elif len(items) < 2 and sb.get("steps") and not has_ans:
                 lines = [runs(x, th) for x in sb["steps"]]
                 items.append(dict(img=board_text_sprite(lines[-1]), t0=t0 + 0.12, t1=t1, fx="up"))
-            elif not items and not has_ans:
+            elif not items and not has_ans and not scene:
                 first = re.split(r"(?<=[.!?])\s", b_say(sb["say"]))[0]
                 if len(first) > 90:
                     first = first[:90].rsplit(" ", 1)[0]
                 items.append(dict(img=board_text_sprite([(first.rstrip(".,"), th["y"])]), t0=t0 + 0.35, t1=t1, fx="up"))
             if i == 0 and not items:
                 items.append(dict(img=pill_sprite(spec.get("hook_tag", "CAN YOU SOLVE IT?"), th), t0=t0 + 0.4, t1=t1, fx="pop"))
-            elif i == 0:
+            elif i == 0 and not scene:
                 items.append(dict(img=pill_sprite(spec.get("hook_tag", "CAN YOU SOLVE IT?"), th), t0=t0 + 0.5, t1=t1, fx="pop"))
             for k, line in enumerate(sb.get("steps") or []):
                 steps.append((t0 + 0.3 + k * max(0.6, (dur - 0.6) / max(1, len(sb["steps"]))), runs(line, th), k == 0))
@@ -457,6 +494,8 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
             cap_cache[key_] = im
         return cap_cache[key_]
 
+    cta_t = cta_start if (beats[-1].get('cta', True) and scene) else 1e9
+
     # 5) frames -> ffmpeg
     say(0.35, "Rendering frames")
     nframes = int(total * FPS)
@@ -466,6 +505,11 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     for fi in range(nframes):
         now = fi / FPS
         fr = bg.copy()
+        if scene and now < cta_t:
+            bi = max((q["i"] for q in plans if q["t0"] <= now), default=0)
+            q = plans[bi]
+            Tq = bi + clamp01((now - q["t0"]) / (q["dur"] + GAP))
+            scenes.draw(fr, scene, Tq, th, sparams)
         for e in els:
             if not (e["t0"] <= now < e["t1"]):
                 continue

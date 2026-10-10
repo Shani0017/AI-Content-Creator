@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0
+- Math videos are now illustrated: every problem draws its own animated scene (cars on a road, a lake filling with lily pads, a clock showing the real time, N people shaking hands, doors, trains and a fly, a stack of logs ...) built from the problem's own numbers.
+- Fixed a wrong explanation in the coupon-order puzzle (percent off first is the cheaper order).
+
 ## 1.0.3
 - One-command Windows installer (install.ps1); picks Python 3.11/3.12 automatically; setup no longer fails on Python 3.14+.
 
