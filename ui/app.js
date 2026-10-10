@@ -134,6 +134,7 @@ function refParams(r, n, kind) {
   const ideasOk = (r.new_topic_ideas || []).filter(x => x && x.length > 6);
   const p = { count: n, palette: r.palette, bg: darkest(r.palette), pace: r.pacing || st.pacing, duration: st.duration_s,
     style: { tone: r.tone, pacing: r.pacing, hook: r.hook, title_style: r.title_style },
+    hint: [r.topic, r.hook, r.source_title, r.description].filter(Boolean).join(" "),
     topics: ideasOk.length ? ideasOk : [r.topic || r.source_title || "a surprising fact"], topic: r.topic };
   if (kind === "math") p.source = "mixed";
   if (kind === "music" && r.palette?.length) p.hue = hueOf(r.palette);
@@ -185,18 +186,39 @@ function hueOf(pal) {
 
 /* ---------------- queue ---------------- */
 let pollTimer = null;
+function renderJobs(el, jobs) {
+  // keyed in-place update: existing cards are only edited, never rebuilt, so nothing blinks
+  if (!jobs.length) { if (!el.querySelector(".empty")) el.innerHTML = `<div class="empty">Your jobs show up here.</div>`; return; }
+  const empty = el.querySelector(".empty"); if (empty) empty.remove();
+  const want = new Set(jobs.map(j => j.id));
+  $$(".job", el).forEach(n => { if (!want.has(n.dataset.id)) n.remove(); });
+  let prev = null;
+  jobs.forEach(j => {
+    let n = el.querySelector(`.job[data-id="${j.id}"]`);
+    if (!n) {
+      n = document.createElement("div");
+      n.className = "job"; n.dataset.id = j.id;
+      n.innerHTML = `<div class="top"><span class="jl"></span><span class="state"></span></div><div class="msg"></div><div class="bar"><i></i></div>`;
+    }
+    n.className = "job " + j.state + (n.dataset.seen ? " seen" : "");
+    n.dataset.seen = "1";
+    const set = (sel, txt) => { const t = n.querySelector(sel); if (t.textContent !== txt) t.textContent = txt; };
+    set(".jl", label(j.kind));
+    set(".state", j.state === "running" ? Math.round(j.progress * 100) + "%" : j.state);
+    set(".msg", j.state === "error" ? j.error : j.message);
+    const w = Math.round(j.progress * 100) + "%";
+    const bar = n.querySelector(".bar i"); if (bar.style.width !== w) bar.style.width = w;
+    const at = prev ? prev.nextSibling : el.firstChild;                    // keep newest-first order without re-creating nodes
+    if (n !== at) el.insertBefore(n, at);
+    prev = n;
+  });
+}
 async function poll() {
   try { S.jobs = await api("/api/jobs"); } catch { return; }
   const el = $("#jobs");
   const active = S.jobs.filter(j => ["queued", "running"].includes(j.state)).length;
   $("#queueNote").textContent = active ? `${active} running or waiting` : (S.jobs.length ? "All done" : "Nothing running");
-  if (!S.jobs.length) el.innerHTML = `<div class="empty">Your jobs show up here.</div>`;
-  else el.innerHTML = S.jobs.map(j => `
-    <div class="job ${j.state}">
-      <div class="top"><span>${label(j.kind)}</span><span class="state">${j.state === "running" ? Math.round(j.progress * 100) + "%" : j.state}</span></div>
-      <div class="msg">${esc(j.state === "error" ? j.error : j.message)}</div>
-      <div class="bar"><i style="width:${Math.round(j.progress * 100)}%"></i></div>
-    </div>`).join("");
+  renderJobs(el, S.jobs);
   clearTimeout(pollTimer);
   pollTimer = setTimeout(poll, active ? 1000 : 4000);
   if (!S.seenDone) S.seenDone = new Set(S.jobs.filter(j => j.state === "done").map(j => j.id));

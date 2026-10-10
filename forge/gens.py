@@ -40,6 +40,31 @@ def catalog():
 
 
 # ------------------------------------------------------------------ balls
+def _pick_sims(hint: str, pool: list, k: int = 3) -> list:
+    """rank the simulations by how well their name / one-line description matches the reference text"""
+    import re
+    syn = {"orb": "ball", "orbs": "ball", "pearl": "ball", "sphere": "ball", "bouncing": "bounce", "bounces": "bounce", "bouncy": "bounce",
+           "marbles": "marble", "balls": "ball", "dominoes": "domino", "pendulums": "pendulum", "pegs": "peg", "bricks": "brick",
+           "swirl": "swirl", "spiral": "spiral", "hexagon": "hexagon", "circle": "circle", "ring": "ring", "rings": "ring", "gravity": "gravity",
+           "orbit": "orbit", "magnet": "magnet", "sand": "sand", "sort": "sort", "wave": "wave", "balls": "ball", "bubbles": "bubble", "heart": "heart"}
+    toks = {syn.get(t, t) for t in re.findall(r"[a-z]+", hint.lower()) if len(t) > 2}
+    scored = []
+    for cls in pool:
+        text = f"{cls.__name__} {getattr(cls, 'TITLE', '')} {getattr(cls, 'SUB', '')}".lower()
+        words = {syn.get(t, t) for t in re.findall(r"[a-z]+", re.sub(r"([a-z])([A-Z])", r"\1 \2", text))}
+        score = len(toks & words) + (2 if "bounce" in toks and ("bounc" in text) else 0) + (1 if "ball" in toks and "ball" in text else 0)
+        if "bounce" in toks and words & {"circle", "hexagon", "ring", "walls", "wall", "inside"}:
+            score += 3                                                    # bouncing inside a shape is the closest look
+        if re.search(r"xylo|piano|music|melody|note", text) and not re.search(r"music|song|piano|xylo|melody|tune", hint.lower()):
+            score -= 4                                                    # musical scenes only when the reference is musical
+        if re.search(r"letters|word|smiley|heart|sunset|sort|string|rose|mandala|epicycle", text) and score < 5:
+            score -= 2
+        scored.append((score, cls))
+    scored.sort(key=lambda x: -x[0])
+    best = [c for sc, c in scored if sc > 0][:k]
+    return best
+
+
 def balls(params, out_dir, progress):
     import importlib
     import audit2, core
@@ -53,9 +78,10 @@ def balls(params, out_dir, progress):
             if not chosen or f"{mod}.{cls.__name__}" in chosen:
                 pool.append(cls)
     rng = random.Random(params.get("seed") or time.time())
+    matched = _pick_sims(params.get("hint", ""), pool) if (not chosen and params.get("hint")) else []
     out = []
     for k in range(count):
-        cls = pool[k % len(pool)] if chosen else rng.choice(pool)
+        cls = matched[k % len(matched)] if matched else (pool[k % len(pool)] if chosen else rng.choice(pool))
         for _ in range(12):
             seed = rng.randint(1, 10 ** 6)
             attrs = {"SEED": seed}

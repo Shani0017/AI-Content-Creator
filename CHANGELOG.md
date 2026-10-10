@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2
+- Queue no longer blinks: cards update in place.
+- Satisfying Balls from a reference: the simulation is chosen to match what the reference is about (name, hashtags, description), not at random.
+
 ## 1.4.1
 - Updating no longer leaves the app closed: the app restarts itself reliably (waits for the port, no extra browser tab) and the page reloads on its own.
 

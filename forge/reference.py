@@ -98,6 +98,6 @@ def analyze(url: str, progress=None) -> dict:
     except Exception:                                   # no model installed / Ollama off: still give a useful recipe from the measurements
         recipe = llm.heuristic_recipe(transcript, meta.get("title", ""), meta.get("description", ""), st)
     recipe.update({"stats": st, "palette": [list(c) for c in pal], "transcript": transcript[:1500], "source_title": meta.get("title", ""),
-                   "has_speech": len(transcript.split()) >= 8})
+                   "has_speech": len(transcript.split()) >= 8, "description": meta.get("description", "")})
     p(1.0, "Analysis ready")
     return recipe
