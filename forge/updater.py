@@ -85,5 +85,10 @@ def apply() -> dict:
 
 
 def restart():
-    """relaunch this process (the UI reloads itself once the server is back)"""
-    os.execv(sys.executable, [sys.executable] + sys.argv)
+    """start a fresh copy that waits for this one to release the port, then stop this one.
+    (os.execv does not replace the process on Windows, which left nothing running after an update)"""
+    env = dict(os.environ, FORGE_NO_BROWSER="1", FORGE_WAIT_PORT="1")      # the open browser tab reloads itself
+    flags = (0x00000008 | 0x08000000) if os.name == "nt" else 0            # DETACHED_PROCESS | CREATE_NO_WINDOW
+    subprocess.Popen([sys.executable, str(ROOT / "app.py")], env=env, cwd=str(ROOT), creationflags=flags, close_fds=True)
+    time.sleep(0.3)
+    os._exit(0)

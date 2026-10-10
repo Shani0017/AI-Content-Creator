@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.1
+- Updating no longer leaves the app closed: the app restarts itself reliably (waits for the port, no extra browser tab) and the page reloads on its own.
+
 ## 1.4.0
 - Reference links: after the analysis the app starts making the closest video by itself (no questions). Options to make more or change the style are tucked away below. The music scene is chosen from what the reference is about.
 

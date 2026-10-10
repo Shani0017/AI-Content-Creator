@@ -41,7 +41,7 @@ def status():
     ol = llm.status()
     upd = updater.check() if st.get("auto_update_check") else {"available": False, "current": VERSION}
     return jsonify({
-        "version": VERSION, "update": upd, "settings": st,
+        "version": VERSION, "update": upd, "settings": st, "pid": os.getpid(),
         "tools": {"ffmpeg": os.path.exists(paths.FFMPEG) or bool(paths.FFMPEG), "voice": speech.models_ready()["tts"], "ollama": ol},
     })
 
@@ -144,6 +144,12 @@ def pub_vps():
     return Response(publisher.vps_package(), mimetype="application/zip", headers={"Content-Disposition": "attachment; filename=vps-poster.zip"})
 
 
+@app.post("/api/restart")
+def restart_app():
+    threading.Timer(0.5, updater.restart).start()
+    return jsonify({"ok": True})
+
+
 @app.post("/api/quit")
 def quit_app():
     threading.Timer(0.6, lambda: os._exit(0)).start()
@@ -167,11 +173,18 @@ def _open_browser():
 
 
 if __name__ == "__main__":
-    with socket.socket() as _s:                       # already running? just open it in the browser
-        if _s.connect_ex(("127.0.0.1", PORT)) == 0:
-            if os.environ.get("FORGE_NO_BROWSER") != "1":
-                webbrowser.open(f"http://127.0.0.1:{PORT}")
-            sys.exit(0)
+    if os.environ.get("FORGE_WAIT_PORT") == "1":     # restarted by the updater: wait until the old copy let go of the port
+        for _ in range(80):
+            with socket.socket() as _s:
+                if _s.connect_ex(("127.0.0.1", PORT)) != 0:
+                    break
+            time.sleep(0.25)
+    else:
+        with socket.socket() as _s:                   # already running? just open it in the browser
+            if _s.connect_ex(("127.0.0.1", PORT)) == 0:
+                if os.environ.get("FORGE_NO_BROWSER") != "1":
+                    webbrowser.open(f"http://127.0.0.1:{PORT}")
+                sys.exit(0)
     jobs.start()
     if os.environ.get("FORGE_NO_BROWSER") != "1":
         threading.Thread(target=_open_browser, daemon=True).start()
