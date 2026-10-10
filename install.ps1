@@ -80,9 +80,10 @@ if (Test-Path $ollama) {
 Say "Creating the desktop shortcut"
 $ws = New-Object -ComObject WScript.Shell
 $lnk = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath("Desktop")) "AI Content Creator.lnk"))
-$lnk.TargetPath = Join-Path $Dest "start.bat"
+$lnk.TargetPath = "wscript.exe"
+$lnk.Arguments = '"' + (Join-Path $Dest "start_hidden.vbs") + '"'
 $lnk.WorkingDirectory = $Dest
 $lnk.Save()
 
 Say "All done. Starting the app..."
-Start-Process -FilePath (Join-Path $Dest "start.bat") -WorkingDirectory $Dest
+Start-Process -FilePath "wscript.exe" -ArgumentList ('"' + (Join-Path $Dest "start_hidden.vbs") + '"') -WorkingDirectory $Dest

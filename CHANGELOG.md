@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.2
+- Runs without the black console window (start_hidden.vbs / pythonw), no flashing windows from ffmpeg, single instance, Quit button and desktop-shortcut button in Settings.
+- Reference links: analysis can no longer return placeholder text; reference colours, pace and length shape all styles.
+- Cleaner update banner text.
+
 ## 1.3.0
 - New Guide page: step-by-step instructions for beginners (first video, AI, Instagram token, Facebook token, GitHub hosting, scheduling, VPS, troubleshooting).
 - Publish page: "How do I get this?" links next to each field, and a "Make my Facebook token permanent" button (no script needed).

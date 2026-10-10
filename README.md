@@ -63,6 +63,10 @@ Open the **Publish** page, enter your Instagram / Facebook IDs and tokens and a 
 Facebook posts are scheduled natively. Instagram is posted by a tiny script on your server: download the VPS package from the same page (Windows or Linux, Python only).
 Tokens stay in `data/publish.json` on your computer and are never uploaded.
 
+## No black window
+
+The app starts in the background (no console). Use the desktop shortcut that the installer creates, or *Settings > Create desktop shortcut*. To stop it, press *Settings > Quit the app*. Logs are in `data/app.log`.
+
 ## Updating
 
 When the maintainer publishes a new version you see a banner at the top of the app. Click **Update now** - your videos, models and settings are kept.

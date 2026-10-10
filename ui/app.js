@@ -221,7 +221,7 @@ async function loadStatus() {
     .map(([n, ok]) => `<div><i class="${ok ? "ok" : ""}"></i>${n}</div>`).join("");
   const u = st.update || {};
   $("#updateBanner").hidden = !u.available;
-  if (u.available) { $("#updTitle").textContent = `Version ${u.latest} is available`; $("#updNotes").textContent = (u.notes || "").replace(/[#*]/g, "").split("\n").filter(Boolean).slice(0, 2).join(" · ") || "New features and fixes."; }
+  if (u.available) { $("#updTitle").textContent = `Version ${u.latest} is available`; $("#updNotes").textContent = (u.notes || "").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => l.replace(/^[-*]\s*/, "")).slice(0, 2).join("  ·  ") || "New features and fixes."; }
 }
 function renderSettings() {
   const st = S.status; if (!st) return;
@@ -243,6 +243,14 @@ $("#saveSettings").onclick = async () => {
 };
 $("#pullBtn").onclick = async () => { await enqueue("pull", { model: $("#pullName").value.trim() }); };
 $("#dlVoice").onclick = async () => { await enqueue("setup", {}); };
+$("#mkShortcut").onclick = async () => {
+  try { await api("/api/shortcut", {}); toast("Shortcut created on your desktop", "good"); } catch (e) { toast("Could not create it: " + e.message, "bad"); }
+};
+$("#quitApp").onclick = async () => {
+  if (!confirm("Close the app? Any video that is being made will stop.")) return;
+  try { await api("/api/quit", {}); } catch { }
+  document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;font:600 20px Segoe UI;color:#cfd3f5;background:#0a0b14">The app has closed. You can close this tab.</div>';
+};
 $("#checkUpd").onclick = async () => {
   const r = await api("/api/update/check", {});
   $("#updState").textContent = r.available ? `Version ${r.latest} is available` : "You are up to date";
