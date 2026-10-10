@@ -212,14 +212,28 @@ def vps_package() -> bytes:
     src = (Path(__file__).parent / "vps_poster.py").read_text(encoding="utf-8")
     url = f"https://raw.githubusercontent.com/{cfg['github_repo'] or 'OWNER/REPO'}/main/plan.json"
     src = src.replace("https://raw.githubusercontent.com/Shani0017/fragspree-media/main/plan.json", url)
-    readme = ("VPS setup (about 5 minutes)\n===========================\n"
-              "1. Copy this folder to your VPS (scp or FileZilla), for example to ~/poster\n"
-              "2. cd ~/poster && python3 -m pip install --user requests\n"
-              "3. Copy .env.template to .env and fill in IG_USER_ID and IG_TOKEN (keep it private): chmod 600 .env\n"
-              "4. Test:   python3 vps_poster.py --dry\n"
-              "5. Run:    nohup python3 vps_poster.py > /dev/null 2>&1 &\n"
-              "Look at vps_poster.log to see what it did. It reads the plan from the app (published to your GitHub repo)\n"
-              "and publishes each reel at its time. Keep it running; a new plan is picked up automatically.\n")
+    readme = ("VPS setup, step by step\n=======================\n"
+              "(The same steps are in the app: Guide > 4e.)\n\n"
+              "WINDOWS VPS\n"
+              "1. Copy this whole folder to the VPS, for example to C:\\poster\n"
+              "2. Open PowerShell as administrator. Check Python:  python --version\n"
+              "   If it is not recognized, install Python 3.11 (python.org, tick 'Add to PATH'), then reopen PowerShell.\n"
+              "3. cd C:\\poster   then   python -m pip install requests\n"
+              "4. notepad C:\\poster\\.env   and write two lines:  IG_USER_ID=...   IG_TOKEN=...\n"
+              "5. Test:  python vps_poster.py --dry     (should print: started (dry run))\n"
+              "6. Start it so it survives restarts - run in PowerShell:\n"
+              "   $py = (Get-Command python).Source\n"
+              "   $a = New-ScheduledTaskAction -Execute $py -Argument \"C:\\poster\\vps_poster.py\" -WorkingDirectory \"C:\\poster\"\n"
+              "   $t = New-ScheduledTaskTrigger -AtStartup\n"
+              "   Register-ScheduledTask -TaskName Poster -Action $a -Trigger $t -RunLevel Highest -User SYSTEM -Force\n"
+              "   Start-ScheduledTask -TaskName Poster\n\n"
+              "LINUX VPS\n"
+              "1. Copy this folder to ~/poster      2. cd ~/poster && python3 -m pip install --user requests\n"
+              "3. Create .env with IG_USER_ID and IG_TOKEN (copy .env.template), then chmod 600 .env\n"
+              "4. python3 vps_poster.py --dry   then   nohup python3 vps_poster.py > /dev/null 2>&1 &\n\n"
+              "WHAT IT DOES\n"
+              "It reads the plan from your GitHub repo, prepares each reel 10 minutes before its time and publishes it at the time.\n"
+              "A new plan is picked up automatically. Look at vps_poster.log to see what happened.\n")
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("vps_poster.py", src)

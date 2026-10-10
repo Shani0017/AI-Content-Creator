@@ -170,22 +170,74 @@
         <p class="note">Facebook posts are scheduled by Facebook itself, so your computer can be off. Instagram has no scheduling, so a small script on a server posts it at the right time (next step).</p>
       </div></details>
 
-      <details class="gd" id="g-vps"><summary><span class="num">4e</span>Instagram posting on a server (VPS)</summary><div class="gd-body">
-        <p>Do this once. A VPS is a small always-on computer you rent. Windows or Linux both work.</p>
+      <details class="gd" id="g-vps"><summary><span class="num">4e</span>Instagram posting on a server (VPS) <small>step by step</small></summary><div class="gd-body">
+        <p>Instagram has no "schedule" feature for apps, so a small script posts each reel at its time. It must run on a computer that is <b>always on</b>. That is what a VPS is: a small computer you rent. You do this once.</p>
+        <p class="note">You need: a VPS (Windows or Linux) with a login, your Instagram user ID and token (from step 4a), and a plan already published from the <b>Publish</b> page (step 4d).</p>
+
+        <h4>A. Get the files ready on your own computer</h4>
         <ol>
-          <li>In the app: <b>Publish</b> &rarr; <b>Download VPS package</b>. Unzip it. Copy the folder to the VPS (for example <code>C:\poster</code>).</li>
-          <li>On the VPS make sure Python 3 is installed (<code>python --version</code>). Then install one library:<pre>python -m pip install requests</pre></li>
-          <li>Create the file <code>.env</code> in that folder (copy <code>.env.template</code>) and fill in <code>IG_USER_ID</code> and <code>IG_TOKEN</code>.</li>
-          <li>Test: <pre>python vps_poster.py --dry</pre> It should say <b>started (dry run)</b>.</li>
-          <li><b>Windows:</b> run this in PowerShell as Administrator so it starts by itself after a restart:
+          <li>Open <b>Publish</b> and press <b>Download VPS package</b>. A file <code>vps-poster.zip</code> is saved.</li>
+          <li>Unzip it. You will see three files: <code>vps_poster.py</code>, <code>.env.template</code> and <code>README.txt</code>.</li>
+        </ol>
+
+        <h4>B. Connect to the VPS</h4>
+        <ul>
+          <li><b>Windows VPS:</b> on your computer press the Windows key, type <b>Remote Desktop Connection</b>, open it, enter the VPS address, then the user name and password your provider gave you.</li>
+          <li><b>Linux VPS:</b> open a terminal and run <code>ssh user@VPS-ADDRESS</code>.</li>
+        </ul>
+
+        <h4>C. Windows VPS</h4>
+        <ol>
+          <li>Copy the unzipped folder on your computer (<b>Ctrl+C</b>), click inside the Remote Desktop window and paste it (<b>Ctrl+V</b>) on the VPS desktop. Then move it to <code>C:\poster</code>.</li>
+          <li>On the VPS press the Windows key, type <b>PowerShell</b>, right-click it and choose <b>Run as administrator</b>.</li>
+          <li>Check Python: <pre>python --version</pre> If it says "not recognized", install it, then <b>close PowerShell and open it again as administrator</b>:
+<pre>Invoke-WebRequest https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe -OutFile $env:TEMP\py.exe
+Start-Process $env:TEMP\py.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait</pre></li>
+          <li>Install the one library:<pre>cd C:\poster
+python -m pip install requests</pre></li>
+          <li>Create your settings file. This opens Notepad; click <b>Yes</b> to create it, type the two lines, save and close:<pre>notepad C:\poster\.env</pre>
+<pre>IG_USER_ID=your instagram id
+IG_TOKEN=your instagram token</pre></li>
+          <li>Check that the token works from the VPS. It should print your Instagram username:
+<pre>python -c "import requests;e=dict(l.split('=',1) for l in open('.env',encoding='utf-8-sig').read().splitlines() if '=' in l);print(requests.get('https://graph.instagram.com/v21.0/me',params={'fields':'username','access_token':e['IG_TOKEN']}).json())"</pre></li>
+          <li>Test the poster. It should print <b>started (dry run)</b>:<pre>python vps_poster.py --dry</pre></li>
+          <li>Make it start by itself, and also after a restart:
 <pre>$py = (Get-Command python).Source
 $a = New-ScheduledTaskAction -Execute $py -Argument "C:\poster\vps_poster.py" -WorkingDirectory "C:\poster"
 $t = New-ScheduledTaskTrigger -AtStartup
 Register-ScheduledTask -TaskName Poster -Action $a -Trigger $t -RunLevel Highest -User "SYSTEM" -Force
 Start-ScheduledTask -TaskName Poster</pre></li>
-          <li><b>Linux:</b> <pre>nohup python3 vps_poster.py &gt; /dev/null 2&gt;&amp;1 &amp;</pre></li>
-          <li>Open <code>vps_poster.log</code> in that folder to see what it did. You are done - it posts at each time in your plan.</li>
+          <li>Confirm it is running:<pre>Get-ScheduledTask Poster | Select State
+Get-Content C:\poster\vps_poster.log -Tail 5</pre> You should see <b>Running</b> and a line saying <b>started</b>.</li>
         </ol>
+
+        <h4>C. Linux VPS (instead of the Windows steps)</h4>
+        <ol>
+          <li>Copy the folder: <code>scp -r vps-poster user@VPS-ADDRESS:~/poster</code> (run on your computer).</li>
+          <li>On the VPS:<pre>cd ~/poster
+python3 -m pip install --user requests
+printf 'IG_USER_ID=your id\nIG_TOKEN=your token\n' &gt; .env
+chmod 600 .env
+python3 vps_poster.py --dry
+nohup python3 vps_poster.py &gt; /dev/null 2&gt;&amp;1 &amp;</pre></li>
+        </ol>
+
+        <h4>D. What to expect</h4>
+        <ul>
+          <li>The script reads your plan from your GitHub repo by itself, and picks up a new plan within a minute. You do not copy anything again.</li>
+          <li>About <b>10 minutes before</b> each post time it prepares the reel (the log says <code>#1 prepared</code>). At the post time it publishes (<code>#1 PUBLISHED</code>).</li>
+          <li>If the VPS was off, it posts up to 2 hours late, otherwise it skips that slot and says so in the log.</li>
+          <li>Every ~30 days it refreshes your Instagram token on its own.</li>
+          <li>Look at <code>vps_poster.log</code> any time to see what it did.</li>
+        </ul>
+
+        <h4>E. If it does not work</h4>
+        <ul>
+          <li><b>"python is not recognized"</b> - install Python (step C3), then reopen PowerShell.</li>
+          <li><b>The token check prints an error</b> - the ID or token in <code>.env</code> is wrong or has extra spaces. Open it again and fix it.</li>
+          <li><b>The task state is not "Running"</b> - run <code>(Get-Command python).Source</code>. If the path is inside your user folder (AppData), install Python for all users (step C3) and register the task again.</li>
+          <li><b>The log says container failed</b> - the video link must be public: check your GitHub repo is <b>Public</b>.</li>
+        </ul>
       </div></details>
 
       <details class="gd" id="g-help"><summary><span class="num">?</span>If something goes wrong</summary><div class="gd-body">

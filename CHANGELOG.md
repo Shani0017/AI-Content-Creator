@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.3
+- Guide: full step-by-step VPS checklist (Windows and Linux): connect, install Python, copy the files, token check, start-on-boot, what to expect, fixes. The VPS package README matches.
+
 ## 1.3.2
 - Runs without the black console window (start_hidden.vbs / pythonw), no flashing windows from ffmpeg, single instance, Quit button and desktop-shortcut button in Settings.
 - Reference links: analysis can no longer return placeholder text; reference colours, pace and length shape all styles.
