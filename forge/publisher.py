@@ -226,3 +226,21 @@ def vps_package() -> bytes:
         z.writestr(".env.template", "IG_USER_ID=\nIG_TOKEN=\n")
         z.writestr("README.txt", readme)
     return buf.getvalue()
+
+
+def make_permanent(app_id: str, app_secret: str, user_token: str) -> dict:
+    """short-lived User token + app id/secret -> never-expiring Page token, saved in the config (secrets are not stored)"""
+    cfg = load()
+    if not cfg["fb_page_id"]:
+        raise RuntimeError("Enter the Facebook Page ID first (Accounts), then press Save.")
+    r = requests.get(f"https://graph.facebook.com/{GRAPH}/oauth/access_token", params={
+        "grant_type": "fb_exchange_token", "client_id": app_id, "client_secret": app_secret, "fb_exchange_token": user_token}, timeout=30).json()
+    if "access_token" not in r:
+        raise RuntimeError("Facebook said: " + str(r.get("error", {}).get("message", r)))
+    p = requests.get(f"https://graph.facebook.com/{GRAPH}/{cfg['fb_page_id']}", params={"fields": "name,access_token", "access_token": r["access_token"]}, timeout=30).json()
+    if "access_token" not in p:
+        raise RuntimeError("Could not get the Page token: " + str(p.get("error", {}).get("message", p)))
+    d = requests.get("https://graph.facebook.com/debug_token", params={"input_token": p["access_token"], "access_token": p["access_token"]}, timeout=30).json().get("data", {})
+    save({"fb_page_token": p["access_token"]})
+    exp = d.get("expires_at", 0)
+    return {"page": p.get("name", ""), "expires": "never" if not exp else f"in {round((exp - time.time()) / 86400)} days"}

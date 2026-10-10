@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+- New Guide page: step-by-step instructions for beginners (first video, AI, Instagram token, Facebook token, GitHub hosting, scheduling, VPS, troubleshooting).
+- Publish page: "How do I get this?" links next to each field, and a "Make my Facebook token permanent" button (no script needed).
+- Create page: "New here?" hint that opens the guide.
+
 ## 1.2.0
 - New Publish page: schedule videos on a Facebook Page (native scheduling), host them for Instagram, build a mixed Math/ASMR/Music/Story plan, download a ready VPS package, and check that everything matches.
 

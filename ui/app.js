@@ -23,6 +23,7 @@ $$("nav a").forEach(a => a.onclick = () => {
   if (a.dataset.page === "library") loadLibrary();
   if (a.dataset.page === "settings") renderSettings();
   if (a.dataset.page === "publish") loadPublish();
+  window.scrollTo(0, 0);
 });
 
 /* ---------------- composer ---------------- */
@@ -242,6 +243,16 @@ $("#updBtn").onclick = async () => {
   } catch (e) { toast("Update failed: " + e.message, "bad"); $("#updBtn").disabled = false; $("#updBtn").textContent = "Update now"; }
 };
 
+/* ---------------- guide links ---------------- */
+function goGuide(id) {
+  $('nav a[data-page="guide"]').click();
+  const el = document.getElementById(id);
+  if (el) { el.open = true; setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 80); }
+}
+document.addEventListener("click", e => { const a = e.target.closest("[data-goto]"); if (a) { e.preventDefault(); e.stopPropagation(); goGuide(a.dataset.goto); } });
+try { if (localStorage.getItem("hintX")) $("#startHint").hidden = true; } catch { }
+$("#hintX").onclick = () => { $("#startHint").hidden = true; try { localStorage.setItem("hintX", "1"); } catch { } };
+
 /* ---------------- publish ---------------- */
 const PUB = ["brand", "ig_user_id", "ig_token", "fb_page_id", "fb_page_token", "github_repo", "github_token", "slots"];
 const pubForm = { per_day: 8, days: 3 };
@@ -262,6 +273,18 @@ $("#pubSave").onclick = async () => {
 const table = (rows, cols) => rows.length ? `<div style="overflow:auto;max-height:340px;margin-top:14px"><table style="width:100%;border-collapse:collapse;font-size:13px">` +
   `<tr>${cols.map(c => `<th style="text-align:left;padding:6px 8px;color:var(--muted)">${c[1]}</th>`).join("")}</tr>` +
   rows.map(r => `<tr style="border-top:1px solid var(--line)">${cols.map(c => `<td style="padding:6px 8px">${esc(r[c[0]])}</td>`).join("")}</tr>`).join("") + `</table></div>` : `<p class="muted">Nothing to show yet.</p>`;
+$("#pmGo").onclick = async () => {
+  $("#pmOut").textContent = "Working...";
+  try {
+    const r = await fetch("/api/publish/permanent", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ app_id: $("#pm_app_id").value, app_secret: $("#pm_app_secret").value, user_token: $("#pm_user_token").value }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    $("#pmOut").textContent = `Done: ${j.page} - token expires ${j.expires}`;
+    ["pm_app_secret", "pm_user_token"].forEach(i => $("#" + i).value = "");
+    toast("Facebook token saved", "good"); loadPublish();
+  } catch (e) { $("#pmOut").textContent = ""; toast(e.message, "bad"); }
+};
 $("#pubPreview").onclick = async () => {
   try { const plan = await api("/api/publish/plan", pubForm); $("#pubTable").innerHTML = table(plan, [["n", "#"], ["time", "When"], ["type", "Type"], ["name", "Video"]]); }
   catch (e) { toast(e.message, "bad"); }
@@ -284,6 +307,6 @@ $("#pubVerify").onclick = async () => {
   setInterval(loadStatus, 5 * 60 * 1000);
   // deep links: #library, #settings, #type=math  (used for the README screenshots)
   const h = location.hash.slice(1);
-  if (h === "library" || h === "settings" || h === "publish") $(`nav a[data-page=${h}]`).click();
+  if (h === "library" || h === "settings" || h === "publish" || h === "guide") $(`nav a[data-page=${h}]`).click();
   if (h.startsWith("type=")) openComposer(h.slice(5));
 })();

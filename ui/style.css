@@ -138,3 +138,20 @@ select option{background:#14162a}
 ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
 
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+.guide{display:flex;flex-direction:column;gap:12px;max-width:900px}
+.gd{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.gd summary{list-style:none;cursor:pointer;padding:16px 20px;font-weight:700;font-size:16px;display:flex;align-items:center;gap:14px}
+.gd summary::-webkit-details-marker{display:none}
+.gd summary::after{content:"+";margin-left:auto;color:var(--muted);font-size:22px;font-weight:400}
+.gd[open] summary::after{content:"\2212"}
+.gd summary small{color:var(--muted);font-weight:500;font-size:12.5px}
+.gd .num{min-width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font-size:14px;padding:0 6px}
+.gd-body{padding:4px 22px 20px 68px;color:#cfd3f5;line-height:1.65;font-size:14.5px}
+.gd-body ol,.gd-body ul{padding-left:20px;display:flex;flex-direction:column;gap:7px;margin:8px 0}
+.gd-body pre{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;overflow:auto;font-size:13px;color:#e7e9ff;white-space:pre-wrap}
+.gd-body .note{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);font-size:13.5px}
+.gd.mini{margin-top:16px;border-radius:14px}.gd.mini summary{font-size:14px;padding:12px 16px}.gd.mini .gd-body{padding:0 16px 16px}
+a.help{color:#7fe6ff;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;margin-left:8px;cursor:pointer;text-decoration:underline dotted}
+.hint{display:flex;align-items:center;gap:10px;margin:-8px 0 20px;padding:12px 16px;border-radius:14px;background:rgba(124,92,255,.14);border:1px solid rgba(124,92,255,.4);font-size:14px}
+.hint .x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer}

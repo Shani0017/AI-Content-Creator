@@ -18,6 +18,7 @@
   <nav>
     <a data-page="create" class="on"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create</a>
     <a data-page="library"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>Library <span class="count" id="libCount">0</span></a>
+    <a data-page="guide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg>Guide</a>
     <a data-page="publish"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-3-7z"/></svg>Publish</a>
     <a data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14.1 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Settings</a>
   </nav>
@@ -38,6 +39,8 @@
       <p>Pick a style, press generate. Everything is made on your own computer with free tools — no accounts, no uploads.</p>
     </header>
 
+    <div class="hint" id="startHint">New here? <a class="help" data-goto="g-start">Open the step-by-step guide</a> - it shows how to make your first video and how to post it.
+      <button class="x" id="hintX" title="Hide">&times;</button></div>
     <div class="grid cards" id="types">
       <button class="type" data-type="math" style="--a:#7c5cff;--b:#00d4ff">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M5 8h6M8 5v6M13 16h6M5 18l5-5M10 18l-5-5"/></svg></span>
@@ -77,6 +80,127 @@
     <div class="grid library" id="library"></div>
   </section>
 
+  <!-- GUIDE -->
+  <section class="page" id="page-guide">
+    <header class="hero slim"><h1>Guide</h1><p>New here? Start at the top and go down. Each step is short. Click a title to open it.</p></header>
+    <div class="guide">
+
+      <details class="gd" id="g-start" open><summary><span class="num">1</span>Make your first video <small>2 minutes</small></summary><div class="gd-body">
+        <ol>
+          <li>Open the <b>Create</b> page (left side).</li>
+          <li>Click a style card, for example <b>Math &amp; Puzzles</b>. A form opens below the cards.</li>
+          <li>Leave the settings as they are and press <b>Generate</b>.</li>
+          <li>Watch the <b>Queue</b> on the right. A video takes about 1 to 3 minutes.</li>
+          <li>When it says <b>Finished</b>, open <b>Library</b> and click the video to play it. The file is also in the <code>output</code> folder of the app.</li>
+        </ol>
+        <p class="note">The first time, the app may ask you to download the voice files (about 340 MB). Open <b>Settings</b> and press <b>Download voice files</b>. It is one time only.</p>
+      </div></details>
+
+      <details class="gd" id="g-styles"><summary><span class="num">2</span>What each style does</summary><div class="gd-body">
+        <ul>
+          <li><b>Math &amp; Puzzles</b> - word problems and riddles with a voice, drawings and the working-out shown step by step.</li>
+          <li><b>Satisfying Balls</b> - calming physics videos (balls, bricks, pegs) with satisfying sounds. Great for ASMR channels.</li>
+          <li><b>Music Balls</b> - balls play a famous public-domain song on a xylophone, bells, glass or drums.</li>
+          <li><b>Story &amp; Facts</b> - you type topics, the AI writes the script, a voice reads it. Needs Ollama (see Settings).</li>
+          <li><b>From a reference link</b> - paste a link to a video you like. The app studies its style and makes a new, original video.</li>
+        </ul>
+      </div></details>
+
+      <details class="gd" id="g-ai"><summary><span class="num">3</span>Turn on the AI (optional) <small>needed for Story &amp; reference</small></summary><div class="gd-body">
+        <ol>
+          <li>Install <b>Ollama</b> from <b>ollama.com</b> and open it once.</li>
+          <li>In this app open <b>Settings</b>. Under <b>Download a model</b> leave <code>llama3.2:3b</code> and press <b>Download</b>. It takes a while (about 2 GB).</li>
+          <li>When it finishes, choose it under <b>Model</b> and press <b>Save</b>.</li>
+        </ol>
+      </div></details>
+
+      <details class="gd" id="g-post"><summary><span class="num">4</span>Post your videos automatically <small>Facebook + Instagram</small></summary><div class="gd-body">
+        <p>This part needs a few accounts and keys. Do the steps below once, in order. You will copy a few IDs and tokens into the <b>Publish</b> page. Nobody else sees them - they stay on this computer.</p>
+        <p class="note"><b>What you need first:</b> an Instagram <b>Professional</b> account (Business or Creator), a Facebook <b>Page</b> you manage, and a free GitHub account.</p>
+      </div></details>
+
+      <details class="gd" id="g-ig"><summary><span class="num">4a</span>Instagram: get the token and ID</summary><div class="gd-body">
+        <ol>
+          <li>Make sure your Instagram is a Professional account: Instagram app &rarr; <b>Settings</b> &rarr; <b>Account type and tools</b> &rarr; switch to professional (Creator or Business).</li>
+          <li>Go to <b>developers.facebook.com</b> and log in with your Facebook.</li>
+          <li>Click <b>My Apps</b> &rarr; <b>Create App</b>. Choose the use case <b>Manage messaging &amp; content on Instagram</b> (or <b>Other</b> &rarr; <b>Business</b>). Give it any name.</li>
+          <li>In the app, open <b>Instagram</b> &rarr; <b>API setup with Instagram login</b>.</li>
+          <li>Open <b>App roles</b> &rarr; <b>Roles</b> &rarr; <b>Add People</b> &rarr; choose <b>Instagram Tester</b> and type your Instagram username.</li>
+          <li><b>Accept the invite</b> in the Instagram app: <b>Settings</b> &rarr; <b>Apps and websites</b> &rarr; <b>Tester invites</b>. (This is the step most people miss.)</li>
+          <li>Back on the API setup page, add the permission <code>instagram_business_content_publish</code> (under <b>Permissions and features</b>).</li>
+          <li>On the API setup page click <b>Add account</b>, log in to your Instagram, then <b>Generate token</b>. Copy the <b>token</b> and the <b>Instagram account ID</b>.</li>
+          <li>In this app: <b>Publish</b> &rarr; paste them into <b>Instagram user ID</b> and <b>Instagram token</b> &rarr; <b>Save</b>.</li>
+        </ol>
+        <p class="note">The token lasts about 60 days. The server script refreshes it automatically.</p>
+      </div></details>
+
+      <details class="gd" id="g-fb"><summary><span class="num">4b</span>Facebook: get the Page ID and a token that never expires</summary><div class="gd-body">
+        <ol>
+          <li>On <b>developers.facebook.com</b> open your app (or make a second one the same way). Add the use case <b>Manage everything on your Page</b>.</li>
+          <li>Under that use case, open <b>Permissions and features</b> and add: <code>pages_show_list</code>, <code>pages_manage_posts</code>, <code>pages_read_engagement</code>.</li>
+          <li>Open <b>Tools</b> &rarr; <b>Graph API Explorer</b>. Pick your app. Leave <b>User or Page</b> on <b>User Token</b>.</li>
+          <li>Under <b>Permissions</b> add the same three permissions and press <b>Generate Access Token</b>. Approve the pop-ups and choose your Page.</li>
+          <li>In the request box type <code>me/accounts?fields=id,name</code> and press <b>Submit</b>. Find your Page's name and copy its <b>id</b>. That is the <b>Page ID</b>.</li>
+          <li>Copy the long token from the <b>Access Token</b> box (this is the short-lived User token).</li>
+          <li>In your app on developers.facebook.com open <b>App settings</b> &rarr; <b>Basic</b>. Copy the <b>App ID</b>. Click <b>Show</b> next to <b>App secret</b> and copy it.</li>
+          <li>In this app: <b>Publish</b> &rarr; type the <b>Facebook Page ID</b> and press <b>Save</b>. Then open <b>Make my Facebook token permanent</b>, paste the App ID, App secret and the User token, and press the button.</li>
+        </ol>
+        <p class="note">When it works you will see your Page name and "never expires". The app secret and user token are not stored.</p>
+      </div></details>
+
+      <details class="gd" id="g-gh"><summary><span class="num">4c</span>GitHub: a place to host your videos for Instagram</summary><div class="gd-body">
+        <p>Instagram downloads each video from a normal web link. A free public GitHub repository gives you that.</p>
+        <ol>
+          <li>Go to <b>github.com</b> &rarr; <b>New repository</b>. Name it something like <code>my-media</code>, choose <b>Public</b>, tick <b>Add a README</b>, press <b>Create</b>.</li>
+          <li>Click your profile picture &rarr; <b>Settings</b> &rarr; <b>Developer settings</b> &rarr; <b>Personal access tokens</b> &rarr; <b>Fine-grained tokens</b> &rarr; <b>Generate new token</b>.</li>
+          <li>Pick <b>Only select repositories</b> and choose your new repo. Under <b>Permissions</b> &rarr; <b>Repository permissions</b> set <b>Contents</b> to <b>Read and write</b>. Generate and copy the token.</li>
+          <li>In this app: <b>Publish</b> &rarr; <b>GitHub repo</b> = <code>yourname/my-media</code>, <b>GitHub token</b> = the token &rarr; <b>Save</b>.</li>
+        </ol>
+        <p class="note">Videos stay in the repo only until you remove them. Anyone can see a public repo, but these are videos you are posting publicly anyway.</p>
+      </div></details>
+
+      <details class="gd" id="g-plan"><summary><span class="num">4d</span>Make a plan and schedule it</summary><div class="gd-body">
+        <ol>
+          <li>Open <b>Publish</b>. Check the three tags at the top say <b>ready</b>.</li>
+          <li>Under <b>Post times</b> keep the list or change it (24-hour clock, separated by commas).</li>
+          <li>Choose <b>Posts per day</b> and <b>Days</b>, then press <b>Preview plan</b>. Read the list.</li>
+          <li>Press <b>Schedule on Facebook + publish plan</b>. The app uploads the videos, schedules Facebook, and publishes the plan for Instagram. Watch the <b>Queue</b>.</li>
+          <li>Press <b>Check posts</b> later to see that everything matches.</li>
+        </ol>
+        <p class="note">Facebook posts are scheduled by Facebook itself, so your computer can be off. Instagram has no scheduling, so a small script on a server posts it at the right time (next step).</p>
+      </div></details>
+
+      <details class="gd" id="g-vps"><summary><span class="num">4e</span>Instagram posting on a server (VPS)</summary><div class="gd-body">
+        <p>Do this once. A VPS is a small always-on computer you rent. Windows or Linux both work.</p>
+        <ol>
+          <li>In the app: <b>Publish</b> &rarr; <b>Download VPS package</b>. Unzip it. Copy the folder to the VPS (for example <code>C:\poster</code>).</li>
+          <li>On the VPS make sure Python 3 is installed (<code>python --version</code>). Then install one library:<pre>python -m pip install requests</pre></li>
+          <li>Create the file <code>.env</code> in that folder (copy <code>.env.template</code>) and fill in <code>IG_USER_ID</code> and <code>IG_TOKEN</code>.</li>
+          <li>Test: <pre>python vps_poster.py --dry</pre> It should say <b>started (dry run)</b>.</li>
+          <li><b>Windows:</b> run this in PowerShell as Administrator so it starts by itself after a restart:
+<pre>$py = (Get-Command python).Source
+$a = New-ScheduledTaskAction -Execute $py -Argument "C:\poster\vps_poster.py" -WorkingDirectory "C:\poster"
+$t = New-ScheduledTaskTrigger -AtStartup
+Register-ScheduledTask -TaskName Poster -Action $a -Trigger $t -RunLevel Highest -User "SYSTEM" -Force
+Start-ScheduledTask -TaskName Poster</pre></li>
+          <li><b>Linux:</b> <pre>nohup python3 vps_poster.py &gt; /dev/null 2&gt;&amp;1 &amp;</pre></li>
+          <li>Open <code>vps_poster.log</code> in that folder to see what it did. You are done - it posts at each time in your plan.</li>
+        </ol>
+      </div></details>
+
+      <details class="gd" id="g-help"><summary><span class="num">?</span>If something goes wrong</summary><div class="gd-body">
+        <ul>
+          <li><b>"Voice model missing"</b> - Settings &rarr; Download voice files.</li>
+          <li><b>"Ollama is not running"</b> - open the Ollama app, then try again.</li>
+          <li><b>Facebook says the token expired</b> - repeat 4b (the permanent token button).</li>
+          <li><b>Instagram says ERROR</b> - the video link must be public. Check the GitHub repo is <b>Public</b> and the GitHub token has <b>Contents: Read and write</b>.</li>
+          <li><b>Nothing posts on Instagram</b> - check the VPS script is running and read <code>vps_poster.log</code>. The VPS must be on.</li>
+          <li><b>The app looks old</b> - Settings &rarr; Check now. Updates keep your videos and settings.</li>
+        </ul>
+      </div></details>
+    </div>
+  </section>
+
   <!-- PUBLISH -->
   <section class="page" id="page-publish">
     <header class="hero slim"><h1>Publish</h1><p>Schedule your videos on a Facebook Page and Instagram, a few days at a time. Facebook is scheduled by the app; Instagram is posted by a tiny script on your server (VPS).</p></header>
@@ -85,14 +209,21 @@
         <h3>1. Accounts</h3>
         <p class="muted" id="pubReady"></p>
         <label>Your name / brand</label><input id="p_brand" placeholder="e.g. FragSpree">
-        <label>Instagram user ID</label><input id="p_ig_user_id">
+        <label>Instagram user ID <a class="help" data-goto="g-ig">How do I get this?</a></label><input id="p_ig_user_id">
         <label>Instagram token</label><input id="p_ig_token" type="password" autocomplete="off">
-        <label>Facebook Page ID</label><input id="p_fb_page_id">
+        <label>Facebook Page ID <a class="help" data-goto="g-fb">How do I get this?</a></label><input id="p_fb_page_id">
         <label>Facebook Page token</label><input id="p_fb_page_token" type="password" autocomplete="off">
-        <label>GitHub repo for hosting (owner/name, public)</label><input id="p_github_repo" placeholder="you/my-media">
+        <label>GitHub repo for hosting (owner/name, public) <a class="help" data-goto="g-gh">How do I get this?</a></label><input id="p_github_repo" placeholder="you/my-media">
         <label>GitHub token (repo access)</label><input id="p_github_token" type="password" autocomplete="off">
         <label>Post times (comma separated, 24h)</label><input id="p_slots">
         <div class="row"><button class="btn primary" id="pubSave">Save</button><span class="muted">Tokens stay on this computer.</span></div>
+        <details class="gd mini"><summary>Make my Facebook token permanent <a class="help" data-goto="g-fb">Steps</a></summary><div class="gd-body">
+          <p class="muted">Facebook tokens normally die after a few hours. Paste these three values once and the app gets a Page token that never expires. They are not stored.</p>
+          <label>App ID</label><input id="pm_app_id" autocomplete="off">
+          <label>App secret</label><input id="pm_app_secret" type="password" autocomplete="off">
+          <label>User token (from Graph API Explorer)</label><input id="pm_user_token" type="password" autocomplete="off">
+          <div class="row"><button class="btn" id="pmGo">Make it permanent</button><span class="muted" id="pmOut"></span></div>
+        </div></details>
       </div>
       <div class="panel">
         <h3>2. Plan and schedule</h3>

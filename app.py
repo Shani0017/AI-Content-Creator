@@ -109,6 +109,15 @@ def pub_run():
     return jsonify(jobs.submit("publish", {"per_day": d.get("per_day", 8), "days": d.get("days", 3), "start": d.get("start", "")}))
 
 
+@app.post("/api/publish/permanent")
+def pub_permanent():
+    d = request.get_json(force=True) or {}
+    try:
+        return jsonify(publisher.make_permanent(d.get("app_id", "").strip(), d.get("app_secret", "").strip(), d.get("user_token", "").strip()))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 @app.get("/api/publish/verify")
 def pub_verify():
     return jsonify(publisher.verify())

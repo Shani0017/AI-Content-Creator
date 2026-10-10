@@ -57,6 +57,8 @@ That is it. Pick a style on the **Create** page and press **Generate**. Finished
 
 ## Publish (Facebook + Instagram)
 
+New to this? Open the **Guide** page in the app: it explains every step in plain words, from your first video to posting on Facebook and Instagram.
+
 Open the **Publish** page, enter your Instagram / Facebook IDs and tokens and a public GitHub repo for hosting, choose posts per day and days, and press *Schedule*.
 Facebook posts are scheduled natively. Instagram is posted by a tiny script on your server: download the VPS package from the same page (Windows or Linux, Python only).
 Tokens stay in `data/publish.json` on your computer and are never uploaded.
