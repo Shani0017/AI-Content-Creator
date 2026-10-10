@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.3
+- One-command Windows installer (install.ps1); picks Python 3.11/3.12 automatically; setup no longer fails on Python 3.14+.
+
 ## 1.0.2
 - Video layout rebuilt: framed stage, centred content, big working-out line, merged equations (3 x 9 = 27), no missing symbols.
 - Library thumbnails and previews fixed for titles containing #.
