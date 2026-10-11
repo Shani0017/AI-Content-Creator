@@ -64,6 +64,11 @@ Updates later appear as a banner inside the app - one click.
 
 <p align="center"><img src="docs/screenshots/video-math.jpg" alt="Frames from a generated math video" width="760"></p>
 
+## Several ideas at once
+
+On the Create page, **Several ideas at once** lets you write a list of ideas, choose a style for each (Math, Balls, Music, Story) and set
+**how many reels to make for every idea**. One press queues all of them.
+
 ## What each style does
 
 | Style | What you get |
@@ -74,13 +79,14 @@ Updates later appear as a banner inside the app - one click.
 | Story & Facts | You give a topic, the AI writes an original script, the app voices it with big keywords on screen. |
 | From a reference link | Paste a link. The app studies its pace, colours, length and topic, then makes a **new, original** video in the closest style - automatically. |
 
-## Publish to Facebook and Instagram
+## Publish to Facebook, Instagram and YouTube
 
 Open the **Publish** page (and the **Guide** for the step-by-step version):
 
 - Enter your Instagram / Facebook IDs and tokens and a public GitHub repo for hosting.
 - Choose posts per day and days, press **Schedule**. Facebook posts are scheduled natively.
 - Instagram has no scheduling for apps, so the app gives you a tiny **VPS package** that posts each reel at its time (Windows or Linux, Python only).
+- **YouTube**: upload your videos to YouTube Studio as Private, then the app sets the title, description and publish time of each one (same times as Facebook/Instagram). Full steps are in the **Guide**.
 - **Check posts** compares what was scheduled with what is live.
 
 Tokens stay in `data/publish.json` on your computer and are never uploaded.

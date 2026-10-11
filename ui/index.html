@@ -58,6 +58,10 @@
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></span>
         <b>Story &amp; Facts</b><small>Your topic in, a scripted voice-over video with big on-screen keywords out.</small>
       </button>
+      <button class="type wide" data-type="multi" style="--a:#ff9f43;--b:#7c5cff">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/><path d="M18 15v6M15 18h6"/></svg></span>
+        <b>Several ideas at once</b><small>Write a list of ideas, pick a style for each and say how many reels to make per idea. Everything is queued in one go.</small>
+      </button>
       <button class="type wide" data-type="reference" style="--a:#00d4ff;--b:#22d3a6">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
         <b>From a reference link</b><small>Paste a link to a video you like. The app studies its pacing, colours and topic, then makes a brand-new video in that style.</small>
@@ -240,12 +244,43 @@ nohup python3 vps_poster.py &gt; /dev/null 2&gt;&amp;1 &amp;</pre></li>
         </ul>
       </div></details>
 
+      <details class="gd" id="g-yt"><summary><span class="num">5</span>YouTube: schedule your videos <small>same times as Facebook + Instagram</small></summary><div class="gd-body">
+        <p>YouTube does not let apps upload and schedule new videos freely (a new Google project gets its uploads locked as private). The reliable way is: <b>you upload the videos as Private in YouTube Studio, the app then writes the title, description and publish time of each one.</b></p>
+        <p class="note"><b>What you need:</b> a YouTube channel and a Google account. It is free. Do 5a once, then 5b whenever you have new videos.</p>
+
+        <h4>5a. One-time setup (about 10 minutes)</h4>
+        <ol>
+          <li>Go to <b>console.cloud.google.com</b> and sign in with the Google account that owns your YouTube channel.</li>
+          <li>Top bar &rarr; project picker &rarr; <b>New project</b>. Name it anything (for example <code>my-youtube</code>) &rarr; <b>Create</b>. Make sure it is selected.</li>
+          <li>Left menu &rarr; <b>APIs &amp; Services</b> &rarr; <b>Library</b>. Search <b>YouTube Data API v3</b> &rarr; <b>Enable</b>.</li>
+          <li><b>APIs &amp; Services</b> &rarr; <b>OAuth consent screen</b> (also called <b>Google Auth platform</b>). Press <b>Get started</b>. App name: anything. User support email and contact email: yours. Audience: <b>External</b>. Agree &rarr; <b>Create</b>.</li>
+          <li>Open <b>Audience</b>. Under <b>Test users</b> press <b>Add users</b> and add your own Gmail address. Then press <b>Publish app</b> (so the sign-in does not expire after 7 days). If Google shows a warning, confirm.</li>
+          <li>Open <b>Clients</b> (or <b>Credentials</b> &rarr; <b>Create credentials</b> &rarr; <b>OAuth client ID</b>). Application type: <b>Desktop app</b>. Name: anything &rarr; <b>Create</b>.</li>
+          <li>Copy the <b>Client ID</b> and the <b>Client secret</b>.</li>
+          <li>In this app: <b>Publish</b> &rarr; <b>YouTube</b> panel &rarr; paste both &rarr; <b>Save</b> &rarr; <b>Sign in with Google</b>. A browser tab opens. Choose your channel account. If it says <i>Google hasn't verified this app</i>, press <b>Advanced</b> &rarr; <b>Go to (your app name)</b> &rarr; <b>Continue</b>, tick the YouTube permission and continue.</li>
+          <li>The panel now shows <b>Signed in</b> with your channel name.</li>
+        </ol>
+        <p class="note">If Google says <b>Access blocked</b> or <b>403 access_denied</b>, your Gmail is not in the <b>Test users</b> list (step 4). Add it and try again.</p>
+
+        <h4>5b. For each batch of videos</h4>
+        <ol>
+          <li>In this app press <b>Library</b> &rarr; <b>Open folder</b>. Your videos are there.</li>
+          <li>Open <b>studio.youtube.com</b> &rarr; <b>Create</b> &rarr; <b>Upload videos</b>. Drag the files in. Choose visibility <b>Private</b> (not Public, not Unlisted). Say <b>No, it's not made for kids</b>. Press <b>Save</b>.</li>
+          <li>Wait until the videos finish processing in Studio.</li>
+          <li>In this app: <b>Publish</b> &rarr; <b>YouTube</b> &rarr; choose <b>Posts per day</b> &rarr; <b>Preview YouTube schedule</b>. Read the list.</li>
+          <li>Press <b>Schedule on YouTube</b>. Watch the <b>Queue</b>. Each video gets its title, description, tags and publish time. YouTube then publishes them by itself, even when this computer is off.</li>
+          <li>Videos that are already in your Facebook/Instagram plan get <b>the same time</b>; the others continue after it.</li>
+        </ol>
+        <p class="note"><b>Daily upload limit:</b> YouTube Studio only accepts a limited number of uploads per day. If it says you reached the limit, upload the rest the next day and press <b>Schedule on YouTube</b> again. Only videos that are still Private and unscheduled are touched.</p>
+      </div></details>
+
       <details class="gd" id="g-help"><summary><span class="num">?</span>If something goes wrong</summary><div class="gd-body">
         <ul>
           <li><b>"Voice model missing"</b> - Settings &rarr; Download voice files.</li>
           <li><b>"Ollama is not running"</b> - open the Ollama app, then try again.</li>
           <li><b>Facebook says the token expired</b> - repeat 4b (the permanent token button).</li>
           <li><b>Instagram says ERROR</b> - the video link must be public. Check the GitHub repo is <b>Public</b> and the GitHub token has <b>Contents: Read and write</b>.</li>
+          <li><b>YouTube says quota or limit</b> - wait a day and press Schedule on YouTube again. Already scheduled videos are not touched.</li>
           <li><b>Nothing posts on Instagram</b> - check the VPS script is running and read <code>vps_poster.log</code>. The VPS must be on.</li>
           <li><b>The app looks old</b> - Settings &rarr; Check now. Updates keep your videos and settings.</li>
         </ul>
@@ -289,6 +324,17 @@ nohup python3 vps_poster.py &gt; /dev/null 2&gt;&amp;1 &amp;</pre></li>
         <h3>3. Instagram on your server</h3>
         <p class="muted">Download the package, copy it to your VPS and follow README.txt (5 commands). It posts each reel at its time, even when this computer is off.</p>
         <div class="row"><a class="btn" href="/api/publish/vps.zip">Download VPS package</a></div>
+      </div>
+      <div class="panel">
+        <h3>5. YouTube</h3>
+        <p class="muted" id="ytState"></p>
+        <p class="muted">Upload your videos in YouTube Studio as <b>Private</b> (<a class="help" data-goto="g-yt">step by step</a>), then press Schedule. The app sets title, description and publish time.</p>
+        <label>Google Client ID</label><input id="yt_client_id" autocomplete="off">
+        <label>Google Client secret</label><input id="yt_client_secret" type="password" autocomplete="off">
+        <div class="row"><button class="btn" id="ytSave">Save</button><button class="btn primary" id="ytAuth">Sign in with Google</button><button class="btn ghost" id="ytOut" hidden>Sign out</button></div>
+        <label>Posts per day</label><div class="stepper" data-key="yt_per_day" data-min="1" data-max="12"><button data-d="-1">&minus;</button><b>8</b><button data-d="1">+</button></div>
+        <div class="row"><button class="btn" id="ytPreview">Preview YouTube schedule</button><button class="btn primary" id="ytRun">Schedule on YouTube</button></div>
+        <div id="ytTable"></div>
       </div>
       <div class="panel">
         <h3>4. Check</h3>

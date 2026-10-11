@@ -19,7 +19,7 @@ if os.name == "nt":                                   # child programs (ffmpeg, 
 
 from flask import Flask, Response, jsonify, request, send_from_directory
 
-from forge import ROOT, VERSION, gens, jobs, llm, paths, publisher, settings, speech, updater
+from forge import ROOT, VERSION, gens, jobs, llm, paths, publisher, settings, speech, updater, youtube
 
 if sys.stdout is None or sys.stderr is None:          # started without a console (pythonw): write the output to a log file
     _log = open(paths.DATA / "app.log", "a", buffering=1, encoding="utf-8")
@@ -142,6 +142,63 @@ def pub_verify():
 @app.get("/api/publish/vps.zip")
 def pub_vps():
     return Response(publisher.vps_package(), mimetype="application/zip", headers={"Content-Disposition": "attachment; filename=vps-poster.zip"})
+
+
+@app.get("/api/youtube/config")
+def yt_config():
+    return jsonify(youtube.public())
+
+
+@app.post("/api/youtube/config")
+def yt_save():
+    d = request.get_json(force=True) or {}
+    return jsonify(youtube.save_client(d.get("client_id", ""), d.get("client_secret", "")))
+
+
+def _yt_redirect():
+    return f"http://127.0.0.1:{PORT}/api/youtube/callback"
+
+
+@app.get("/api/youtube/auth")
+def yt_auth():
+    try:
+        return jsonify({"url": youtube.auth_url(_yt_redirect())})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.get("/api/youtube/callback")
+def yt_callback():
+    code = request.args.get("code", "")
+    try:
+        if not code:
+            raise RuntimeError(request.args.get("error", "No sign-in received."))
+        name = youtube.finish_auth(code, _yt_redirect())
+        msg = f"Signed in{' as ' + name if name else ''}. You can close this tab and go back to the app."
+    except Exception as e:
+        msg = "Sign-in failed: " + str(e)
+    return Response(f"<body style='font:600 20px Segoe UI;background:#0a0b14;color:#cfd3f5;display:grid;place-items:center;height:100vh'><div>{msg}</div></body>", mimetype="text/html")
+
+
+@app.post("/api/youtube/signout")
+def yt_signout():
+    youtube.sign_out()
+    return jsonify(youtube.public())
+
+
+@app.post("/api/youtube/plan")
+def yt_plan():
+    d = request.get_json(force=True) or {}
+    try:
+        return jsonify(youtube.preview(int(d.get("per_day", 8)), d.get("start", "")))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.post("/api/youtube/run")
+def yt_run():
+    d = request.get_json(force=True) or {}
+    return jsonify(jobs.submit("youtube", {"per_day": d.get("per_day", 8), "start": d.get("start", "")}))
 
 
 @app.post("/api/restart")

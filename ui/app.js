@@ -22,7 +22,7 @@ $$("nav a").forEach(a => a.onclick = () => {
   $$(".page").forEach(p => p.classList.toggle("on", p.id === "page-" + a.dataset.page));
   if (a.dataset.page === "library") loadLibrary();
   if (a.dataset.page === "settings") renderSettings();
-  if (a.dataset.page === "publish") loadPublish();
+  if (a.dataset.page === "publish") { loadPublish(); loadYoutube(); }
   window.scrollTo(0, 0);
 });
 
@@ -56,6 +56,11 @@ const COMPOSERS = {
     <textarea id="f_topics" placeholder="Why the sky is blue&#10;3 habits of calm people&#10;The history of chess"></textarea>
     <label>How many videos?</label>${stepper("count", 1, 1, 20)}
     <label>Colour theme</label>${seg("theme", [["midnight", "Midnight"], ["ocean", "Ocean"], ["sunset", "Sunset"], ["forest", "Forest"]], "midnight")}`,
+  multi: () => `
+    <h3>Several ideas at once</h3>
+    <p class="muted">One row per idea. Choose a style, describe the idea (optional for Math, Balls and Music), and set <b>how many reels to make for that idea</b>. Press Generate and everything is queued.</p>
+    <div id="ideas"></div>
+    <div class="row"><button class="btn" id="addIdea">+ Add another idea</button><span class="muted" id="ideaTotal"></span></div>`,
   reference: () => `
     <h3>From a reference link</h3>
     <p class="muted">Paste a link to a video you like (YouTube, Instagram, TikTok and more). The app studies <b>how</b> it is made — pacing, colours, topic, tone — and makes a new original video in that style. Only use links you have the right to study.</p>
@@ -64,6 +69,47 @@ const COMPOSERS = {
     <div class="row"><button class="btn primary" id="analyze">Analyze this video</button></div>
     <div id="recipeBox"></div>`,
 };
+const IDEA_HINT = {
+  math: "e.g. money problems, speed and trains, ages (or leave empty)",
+  balls: "e.g. bouncing balls inside a hexagon (or leave empty for a surprise)",
+  music: "e.g. xylophone playing a Christmas song (or leave empty)",
+  story: "e.g. Why the sky is blue (required)",
+};
+function addIdea(kind = "math", count = 3) {
+  const row = document.createElement("div");
+  row.className = "idea";
+  row.innerHTML = `<select class="i_kind">${Object.keys(IDEA_HINT).map(k => `<option value="${k}" ${k === kind ? "selected" : ""}>${kindName(k)}</option>`).join("")}</select>
+    <input class="i_text" placeholder="${IDEA_HINT[kind]}">
+    <div class="stepper mini" title="Reels for this idea"><button data-d="-1">&minus;</button><b>${count}</b><button data-d="1">+</button></div><span class="muted">reels</span>
+    <button class="btn ghost rm" title="Remove this idea">&times;</button>`;
+  $("#ideas").appendChild(row);
+  const sel = $(".i_kind", row), txt = $(".i_text", row), b = $("b", row);
+  sel.onchange = () => { txt.placeholder = IDEA_HINT[sel.value]; };
+  $$(".stepper button", row).forEach(btn => btn.onclick = () => { b.textContent = Math.max(1, Math.min(30, +b.textContent + (+btn.dataset.d))); ideaTotal(); });
+  $(".rm", row).onclick = () => { row.remove(); ideaTotal(); };
+  ideaTotal();
+}
+function ideaTotal() {
+  const rows = $$("#ideas .idea");
+  const n = rows.reduce((a, r) => a + (+$("b", r).textContent), 0);
+  $("#ideaTotal").textContent = rows.length ? `${rows.length} idea${rows.length > 1 ? "s" : ""} - ${n} reel${n > 1 ? "s" : ""} in total` : "Add at least one idea";
+}
+async function submitIdeas() {
+  const jobs = [];
+  for (const r of $$("#ideas .idea")) {
+    const kind = $(".i_kind", r).value, text = $(".i_text", r).value.trim(), count = +$("b", r).textContent;
+    if (kind === "story" && !text) return toast("Story ideas need a topic - type one in the row", "bad");
+    let p = { count };
+    if (kind === "math") Object.assign(p, { source: text ? "mixed" : "templates", topic: text, theme: "midnight" });
+    if (kind === "balls") Object.assign(p, { sims: [], hint: text });
+    if (kind === "music") Object.assign(p, { songs: [], scenes: [], topic: text });
+    if (kind === "story") Object.assign(p, { topics: [text], theme: "midnight" });
+    jobs.push([kind, p]);
+  }
+  if (!jobs.length) return toast("Add at least one idea", "bad");
+  for (const [k, p] of jobs) await enqueue(k, p);
+  toast(`Queued ${jobs.length} idea${jobs.length > 1 ? "s" : ""}`, "good");
+}
 const seg = (key, opts, def) => { S.form[key] = def; return `<div class="seg" data-key="${key}">${opts.map(([v, t]) => `<button data-v="${v}" class="${v === def ? "on" : ""}">${t}</button>`).join("")}</div>`; };
 const stepper = (key, def, min, max) => { S.form[key] = def; return `<div class="stepper" data-key="${key}" data-min="${min}" data-max="${max}"><button data-d="-1">−</button><b>${def}</b><button data-d="1">+</button></div>`; };
 
@@ -79,7 +125,8 @@ function openComposer(type) {
     S.form[st.dataset.key] = v; $("b", st).textContent = v;
   }));
   $$(".chips", box).forEach(c => $$("button", c).forEach(b => b.onclick = () => b.classList.toggle("on")));
-  if ($("#go")) $("#go").onclick = submitCurrent;
+  if ($("#go")) $("#go").onclick = type === "multi" ? submitIdeas : submitCurrent;
+  if (type === "multi") { $("#addIdea").onclick = () => addIdea(); addIdea("math", 3); addIdea("balls", 3); }
   if ($("#analyze")) $("#analyze").onclick = analyze;
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -224,7 +271,7 @@ async function poll() {
   if (!S.seenDone) S.seenDone = new Set(S.jobs.filter(j => j.state === "done").map(j => j.id));
   S.jobs.filter(j => j.state === "done" && !S.seenDone.has(j.id)).forEach(j => { S.seenDone.add(j.id); if (j.kind !== "reference") { toast("Finished — see Library", "good"); loadLibrary(); } });
 }
-const label = k => ({ math: "Math & Puzzles", balls: "Satisfying Balls", music: "Music Balls", story: "Story & Facts", reference: "Studying reference", setup: "Downloading voice files", pull: "Downloading AI model", publish: "Publishing to Facebook" }[k] || k);
+const label = k => ({ math: "Math & Puzzles", balls: "Satisfying Balls", music: "Music Balls", story: "Story & Facts", reference: "Studying reference", setup: "Downloading voice files", pull: "Downloading AI model", publish: "Publishing to Facebook", youtube: "Scheduling on YouTube" }[k] || k);
 
 /* ---------------- library ---------------- */
 async function loadLibrary() {
@@ -365,6 +412,49 @@ $("#pubRun").onclick = async () => {
 $("#pubVerify").onclick = async () => {
   const rows = await api("/api/publish/verify");
   $("#pubVerifyTable").innerHTML = table(rows, [["n", "#"], ["time", "When"], ["name", "Video"], ["facebook", "Facebook"], ["link", "Video link"]]);
+};
+
+/* ---------------- YouTube ---------------- */
+const ytForm = { yt_per_day: 8 };
+async function loadYoutube() {
+  const c = await api("/api/youtube/config");
+  $("#yt_client_id").value = c.client_id || "";
+  $("#yt_client_secret").value = c.client_secret || "";
+  $("#ytState").innerHTML = c.signed_in ? `<span class="tag">signed in${c.channel ? " as " + esc(c.channel) : ""}</span>`
+    : `<span class="tag" style="background:rgba(255,92,138,.18);color:#ff9bb5">${c.has_client ? "press Sign in" : "not set up"}</span>`;
+  $("#ytOut").hidden = !c.signed_in;
+}
+$$("#page-publish .stepper[data-key=yt_per_day] button").forEach(b => b.onclick = () => {
+  const st = b.parentElement, v = Math.max(+st.dataset.min, Math.min(+st.dataset.max, ytForm.yt_per_day + (+b.dataset.d)));
+  ytForm.yt_per_day = v; $("b", st).textContent = v;
+});
+$("#ytSave").onclick = async () => {
+  await api("/api/youtube/config", { client_id: $("#yt_client_id").value.trim(), client_secret: $("#yt_client_secret").value.trim() });
+  toast("Saved", "good"); loadYoutube();
+};
+$("#ytAuth").onclick = async () => {
+  try {
+    await api("/api/youtube/config", { client_id: $("#yt_client_id").value.trim(), client_secret: $("#yt_client_secret").value.trim() });
+    const r = await api("/api/youtube/auth");
+    window.open(r.url, "_blank");
+    toast("Finish the sign-in in the new tab", "good");
+    const t = setInterval(async () => { const c = await api("/api/youtube/config"); if (c.signed_in) { clearInterval(t); loadYoutube(); toast("Signed in to YouTube", "good"); } }, 2000);
+    setTimeout(() => clearInterval(t), 300000);
+  } catch (e) { toast(e.message, "bad"); }
+};
+$("#ytOut").onclick = async () => { await api("/api/youtube/signout", {}); loadYoutube(); };
+$("#ytPreview").onclick = async () => {
+  try {
+    $("#ytTable").innerHTML = `<p class="muted">Reading your channel...</p>`;
+    const rows = await api("/api/youtube/plan", { per_day: ytForm.yt_per_day });
+    $("#ytTable").innerHTML = rows.length ? table(rows, [["n", "#"], ["time", "When"], ["type", "Type"], ["title", "Video"], ["how", "How"]])
+      : `<p class="muted">No private, unscheduled videos found. Upload them in YouTube Studio as Private first (Guide, step 5).</p>`;
+  } catch (e) { $("#ytTable").innerHTML = ""; toast(e.message, "bad"); }
+};
+$("#ytRun").onclick = async () => {
+  if (!confirm("This sets the title, description and publish time of every Private, unscheduled video on your channel. Continue?")) return;
+  try { await api("/api/youtube/run", { per_day: ytForm.yt_per_day }); toast("YouTube scheduling started - watch the queue on the Create page", "good"); poll(); }
+  catch (e) { toast(e.message, "bad"); }
 };
 
 /* ---------------- boot ---------------- */

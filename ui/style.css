@@ -160,3 +160,7 @@ a.help{color:#7fe6ff;font-size:12px;font-weight:600;text-transform:none;letter-s
 .auto-box{margin-top:14px;padding:13px 15px;border-radius:12px;background:rgba(34,211,166,.1);border:1px solid rgba(34,211,166,.35);font-size:14px;line-height:1.55}
 .job.seen{animation:none}
 .job .bar i{will-change:width}
+.idea{display:grid;grid-template-columns:150px 1fr auto auto auto;gap:8px;align-items:center;margin-top:10px}
+.idea .stepper.mini{margin:0}
+.idea .rm{padding:4px 10px}
+@media(max-width:700px){.idea{grid-template-columns:1fr 1fr}.idea .i_text{grid-column:1/-1}}

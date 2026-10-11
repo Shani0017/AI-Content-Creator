@@ -68,6 +68,11 @@ def _run(job):
         r = publisher.run_plan(plan, cb)
         job["message"] = f"Scheduled {r['scheduled']} videos"
         return []
+    if kind == "youtube":
+        from . import youtube
+        r = youtube.run(params, cb)
+        job["message"] = f"Scheduled {r['scheduled']} videos on YouTube"
+        return []
     if kind == "reference":
         recipe = reference.analyze(params["url"], cb)
         job["recipe"] = recipe

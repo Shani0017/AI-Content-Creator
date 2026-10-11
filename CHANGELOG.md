@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+- New: **Several ideas at once** - add a list of ideas, pick a style for each and choose how many reels to make per idea.
+- New: **YouTube scheduling** (Publish > YouTube) with a full step-by-step guide. Upload as Private in Studio, the app sets title, description and time (same times as Facebook/Instagram).
+
 ## 1.4.2
 - Queue no longer blinks: cards update in place.
 - Satisfying Balls from a reference: the simulation is chosen to match what the reference is about (name, hashtags, description), not at random.
