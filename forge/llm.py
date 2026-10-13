@@ -83,7 +83,7 @@ def math_problems(n: int, topics: str = "", level: str = "easy to medium") -> li
     """AI-written word problems. Each answer is double-checked by solving the problem again in a fresh call."""
     out = []
     tries = 0
-    while len(out) < n and tries < n * 3:
+    while len(out) < n and tries < n * 8:
         tries += 1
         data = chat_json(
             f"Write ONE original short word problem or logic puzzle for a viral 40-second video ({level}). {('Theme: ' + topics) if topics else ''}\n"

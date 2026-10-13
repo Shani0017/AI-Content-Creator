@@ -1,3 +1,4 @@
+﻿import os
 """Spec -> finished 1080x1920 video. Pure Pillow + ffmpeg (no browser needed), so it runs the same on any Windows PC.
 
 spec = {
@@ -75,7 +76,7 @@ def runs(html, theme):
     return [r for r in out if r[0]]
 
 
-_GLYPH = {"→": "->", "←": "<-", "≠": "!=", "≈": "~", "✓": "", "✗": "x", "≥": ">=", "≤": "<=", "−": "-", "…": "...", "·": "-", "∞": "inf", "⇄": "<->"}
+_GLYPH = {"â†’": "->", "â†": "<-", "â‰ ": "!=", "â‰ˆ": "~", "âœ“": "", "âœ—": "x", "â‰¥": ">=", "â‰¤": "<=", "âˆ’": "-", "â€¦": "...", "Â·": "-", "âˆž": "inf", "â‡„": "<->"}
 
 
 def _plain(s):
@@ -239,12 +240,12 @@ def b_say(s):
     return _plain(s).strip()
 
 
-OPS = {"times": "×", "plus": "+", "minus": "-", "over": "/"}
+OPS = {"times": "Ã—", "plus": "+", "minus": "-", "over": "/"}
 EQ = {"is", "equals", "makes", "gives"}
 
 
 def number_cards(words):
-    """[(time, text, label)]: spoken numbers become cards; 'three times nine is twenty-seven' becomes one '3 × 9 = 27' card"""
+    """[(time, text, label)]: spoken numbers become cards; 'three times nine is twenty-seven' becomes one '3 Ã— 9 = 27' card"""
     ws = []
     for w in words:
         if ws and w["w"].startswith(".") and ws[-1]["w"][-1:].isdigit():
@@ -267,7 +268,7 @@ def number_cards(words):
             if nxt and bare(nxt).lower() in OPS and nxt2 and isnum(nxt2) and not ws[j]["w"].endswith((".", "?", "!")):
                 txt += f" {OPS[bare(nxt).lower()]} {bare(nxt2)}"; j += 2; continue
             if nxt and bare(nxt).lower() == "divided" and nxt2 and bare(nxt2).lower() == "by" and nxt3 and isnum(nxt3):
-                txt += f" ÷ {bare(nxt3)}"; j += 3; continue
+                txt += f" Ã· {bare(nxt3)}"; j += 3; continue
             if nxt and bare(nxt).lower() in EQ and nxt2 and isnum(nxt2) and not ws[j]["w"].endswith((".", "?", "!")):
                 txt += f" = {bare(nxt2)}"; j += 2; continue
             break
@@ -370,7 +371,7 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
         else:
             has_ans = bool(sb.get("answer"))
             cards = sb.get("cards")
-            found = [(t0 + 0.25 + 0.5 * k, c, "") for k, c in enumerate(cards or [])] if cards else [(t0 + s, tx, lb) for s, tx, lb in number_cards(words)]
+            found = [] if sb.get("nocards") else ([(t0 + 0.25 + 0.5 * k, c, "") for k, c in enumerate(cards or [])] if cards else [(t0 + s, tx, lb) for s, tx, lb in number_cards(words)])
             maxc = 2 if (has_ans or sb.get("stamp")) else 3
             for k, (tt, tx, lb) in enumerate(found[:maxc]):
                 size = (84 if len(tx) <= 5 else 70) if scene else (128 if len(tx) <= 5 else (100 if len(tx) <= 8 else 78))
@@ -429,7 +430,7 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
         if a + len(s) < len(buf):
             buf[a:a + len(s)] += s * 0.55
     buf /= max(1.0, float(np.abs(buf).max()) / 0.92)
-    wav_path = paths.CACHE / "_mix.wav"
+    wav_path = paths.CACHE / f"_mix_{os.getpid()}.wav"
     sf.write(wav_path, buf, SR)
 
     # 4) static background + header
@@ -500,7 +501,7 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     # 5) frames -> ffmpeg
     say(0.35, "Rendering frames")
     nframes = int(total * FPS)
-    tmp_v = paths.CACHE / "_frames.mp4"
+    tmp_v = paths.CACHE / f"_frames_{os.getpid()}.mp4"
     ff = subprocess.Popen([paths.FFMPEG, "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
                            "-an", "-c:v", "libx264", "-crf", "19", "-preset", "veryfast", "-pix_fmt", "yuv420p", str(tmp_v)], stdin=subprocess.PIPE)
     for fi in range(nframes):
@@ -565,3 +566,4 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
                     "loudnorm=I=-14:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(out_path)], check=True)
     say(1.0, "Done")
     return total
+

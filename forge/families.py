@@ -94,9 +94,10 @@ WRONG = ("WRONG", "#ff5c8a")
 
 # ------------------------------------------------------------------ 1 bat & ball
 def f_batball(v):
-    items = [("bat", "ball"), ("pen", "eraser"), ("burger", "fries"), ("phone", "case"), ("sandwich", "drink")][v]
-    s = [5, 10, 15, 20, 25][v]
-    D = [100, 200, 300, 500, 1000][v]
+    items = [("bat", "ball"), ("pen", "eraser"), ("burger", "fries"), ("phone", "case"), ("sandwich", "drink"),
+             ("hat", "scarf"), ("mug", "spoon"), ("book", "bookmark"), ("camera", "lens"), ("guitar", "pick")][v]
+    s = [5, 10, 15, 20, 25, 30, 8, 12, 40, 6][v]
+    D = [100, 200, 300, 500, 1000, 150, 400, 600, 50, 250][v]
     T = D + 2 * s
     big, small = items
     _sp = dict(
@@ -119,7 +120,8 @@ def f_batball(v):
 # ------------------------------------------------------------------ 2 doubling
 def f_lily(v):
     thing, place, N = [("lily pads", "the lake", 48), ("algae", "the pond", 30), ("mold", "the loaf of bread", 20), ("weeds", "the garden", 36),
-                       ("moss", "the stone wall", 60)][v]
+                       ("moss", "the stone wall", 60),
+                       ("duckweed", "the river", 24), ("lichen", "the rock face", 40), ("ivy", "the old wall", 50), ("bacteria", "the dish", 28), ("seaweed", "the bay", 44)][v]
     _sp = dict(
         title="The Doubling Trap", subtitle=f"doubles daily · full on day {N} · when was it half?", tags=("WORD PROBLEM", "EXPONENTIAL"),
         headline=f"The {thing.title()} Riddle That Tricks Everyone",
@@ -136,8 +138,9 @@ def f_lily(v):
 
 # ------------------------------------------------------------------ 3 widgets
 def f_widgets(v):
-    n = [5, 3, 6, 8, 4][v]
-    thing, mach = [("widgets", "machines"), ("pizzas", "ovens"), ("cookies", "mixers"), ("phones", "robots"), ("shirts", "presses")][v]
+    n = [5, 3, 6, 8, 4, 7, 9, 10, 12, 15][v]
+    thing, mach = [("widgets", "machines"), ("pizzas", "ovens"), ("cookies", "mixers"), ("phones", "robots"), ("shirts", "presses"),
+                   ("burgers", "grills"), ("bottles", "fillers"), ("toys", "printers"), ("cakes", "bakers"), ("shoes", "workers")][v]
     _sp = dict(
         title="The Machine Puzzle", subtitle=f"{n} machines · {n} minutes · {n} {thing}", tags=("WORD PROBLEM", "RATES"),
         headline=f"{n} Machines Make {n} {thing.title()} - How Long For 100",
@@ -154,7 +157,7 @@ def f_widgets(v):
 
 # ------------------------------------------------------------------ 4 average speed
 def f_avgspeed(v):
-    a, b = [(30, 60), (40, 60), (20, 30), (60, 90), (50, 75)][v]
+    a, b = [(30, 60), (40, 60), (20, 30), (60, 90), (50, 75), (24, 48), (36, 72), (45, 90), (15, 30), (20, 60)][v]
     avg = Fraction(2 * a * b, a + b)
     sa = f"{float(avg):g}"
     simple = (a + b) / 2
@@ -176,8 +179,9 @@ def f_avgspeed(v):
 
 # ------------------------------------------------------------------ 5 handshakes
 def f_handshake(v):
-    n = [5, 8, 10, 12, 20][v]
-    ctx = ["friends at a dinner", "players before a match", "guests at a party", "people at a meeting", "students on the first day"][v]
+    n = [5, 8, 10, 12, 20, 6, 7, 9, 15, 25][v]
+    ctx = ["friends at a dinner", "players before a match", "guests at a party", "people at a meeting", "students on the first day",
+           "cousins at a family reunion", "teammates after a game", "neighbours at a barbecue", "coworkers at a workshop", "fans at a meet and greet"][v]
     tot = n * (n - 1) // 2
     _sp = dict(
         title="The Handshake Problem", subtitle=f"{n} people · everyone shakes everyone's hand once", tags=("WORD PROBLEM", "COUNTING"),
@@ -194,8 +198,9 @@ def f_handshake(v):
 
 # ------------------------------------------------------------------ 6 percent up & down
 def f_percent(v):
-    p = [10, 20, 30, 40, 50][v]
-    item, price = [("jacket", 100), ("phone", 500), ("bike", 200), ("laptop", 1000), ("watch", 400)][v]
+    p = [10, 20, 30, 40, 50, 25, 60, 15, 35, 75][v]
+    item, price = [("jacket", 100), ("phone", 500), ("bike", 200), ("laptop", 1000), ("watch", 400),
+                   ("sofa", 400), ("camera", 500), ("guitar", 400), ("tv", 400), ("ring", 400)][v]
     up = price * (100 + p) // 100
     down = up * (100 - p) // 100
     _sp = dict(
@@ -215,7 +220,7 @@ def f_percent(v):
 
 # ------------------------------------------------------------------ 7 fence posts
 def f_fence(v):
-    L, s = [(100, 10), (60, 5), (200, 20), (90, 15), (150, 25)][v]
+    L, s = [(100, 10), (60, 5), (200, 20), (90, 15), (150, 25), (120, 10), (80, 5), (300, 30), (45, 5), (240, 20)][v]
     gaps = L // s
     _sp = dict(
         title="The Fence Post Trap", subtitle=f"{L} m fence · a post every {s} m", tags=("WORD PROBLEM", "COUNTING"),
@@ -232,9 +237,10 @@ def f_fence(v):
 
 # ------------------------------------------------------------------ 8 frog in well
 def f_frog(v):
-    d, a, b = [(10, 3, 2), (20, 5, 4), (12, 4, 2), (30, 7, 4), (15, 5, 3)][v]
+    d, a, b = [(10, 3, 2), (20, 5, 4), (12, 4, 2), (30, 7, 4), (15, 5, 3), (14, 5, 3), (24, 6, 4), (16, 6, 3), (35, 9, 5), (18, 7, 4)][v]
     days = math.ceil((d - a) / (a - b)) + 1
-    animal, place = [("frog", "a well"), ("snail", "a garden pipe"), ("ant", "a bucket"), ("monkey", "a pit"), ("beetle", "a deep hole")][v]
+    animal, place = [("frog", "a well"), ("snail", "a garden pipe"), ("ant", "a bucket"), ("monkey", "a pit"), ("beetle", "a deep hole"),
+                     ("rabbit", "a burrow"), ("worm", "a flower pot"), ("mouse", "a drain"), ("spider", "a tall vase"), ("cat", "a dry well")][v]
     _sp = dict(
         title="The Climbing Puzzle", subtitle=f"{d} m deep · up {a} · back {b}", tags=("WORD PROBLEM", "LOGIC"),
         headline=f"A {animal.title()} Climbs {a} Metres A Day And Slips {b} - How Many Days",
@@ -252,10 +258,11 @@ def f_frog(v):
 
 # ------------------------------------------------------------------ 9 work rate
 def f_work(v):
-    a, b = [(6, 3), (4, 12), (10, 15), (12, 6), (20, 30)][v]
+    a, b = [(6, 3), (4, 12), (10, 15), (12, 6), (20, 30), (15, 30), (20, 5), (12, 4), (30, 60), (24, 8)][v]
     tg = Fraction(a * b, a + b)
     tgs = f"{float(tg):g}"
-    job = ["paint a room", "mow a field", "fill a pool", "stack the shelves", "write a report"][v]
+    job = ["paint a room", "mow a field", "fill a pool", "stack the shelves", "write a report",
+           "wash the windows", "plant a garden", "pack the boxes", "bake the bread", "clean the garage"][v]
     _sp = dict(
         title="The Teamwork Puzzle", subtitle=f"{a} hours alone · {b} hours alone · together?", tags=("WORD PROBLEM", "RATES"),
         headline=f"Alone It Takes {a} Hours, Alone It Takes {b} - How Long Together",
@@ -271,11 +278,12 @@ def f_work(v):
 
 # ------------------------------------------------------------------ 10 watermelon
 def f_water(v):
-    m, p1, p2 = [(100, 99, 98), (200, 98, 96), (100, 99, 96), (100, 95, 90), (100, 90, 80)][v]
+    m, p1, p2 = [(100, 99, 98), (200, 98, 96), (100, 99, 96), (100, 95, 90), (100, 90, 80), (50, 99, 98), (100, 98, 96), (300, 99, 98), (100, 96, 92), (500, 98, 96)][v]
     solid = Fraction(m * (100 - p1), 100)
     new = solid / Fraction(100 - p2, 100)
     ns = f"{float(new):g}"
-    item = ["watermelon", "bag of grapes", "pile of fruit", "stack of mushrooms", "box of cucumbers"][v]
+    item = ["watermelon", "bag of grapes", "pile of fruit", "stack of mushrooms", "box of cucumbers",
+            "basket of tomatoes", "sack of potatoes", "crate of apples", "tray of berries", "bunch of herbs"][v]
     _sp = dict(
         title="The Dehydration Trap", subtitle=f"{m} kg · {p1}% water → {p2}% water", tags=("WORD PROBLEM", "PERCENT"),
         headline=f"A {m} Kilo {item.title()} Is {p1} Percent Water - Dries To {p2} Percent",
@@ -292,7 +300,7 @@ def f_water(v):
 
 # ------------------------------------------------------------------ 11 clock angle
 def f_clock(v):
-    h, m = [(3, 30), (2, 20), (4, 10), (7, 30), (12, 20)][v]
+    h, m = [(3, 30), (2, 20), (4, 10), (7, 30), (12, 20), (6, 20), (9, 40), (1, 10), (10, 50), (5, 40)][v]
     ang = abs(30 * (h % 12) - 5.5 * m)
     ang = min(ang, 360 - ang)
     angs = f"{ang:g}"
@@ -312,8 +320,8 @@ def f_clock(v):
 
 # ------------------------------------------------------------------ 12 all but n
 def f_allbut(v):
-    tot, n = [(17, 9), (25, 8), (30, 12), (50, 7), (100, 15)][v]
-    animal = ["sheep", "cows", "chickens", "goats", "horses"][v]
+    tot, n = [(17, 9), (25, 8), (30, 12), (50, 7), (100, 15), (20, 6), (40, 9), (60, 11), (35, 8), (75, 12)][v]
+    animal = ["sheep", "cows", "chickens", "goats", "horses", "ducks", "pigs", "rabbits", "turkeys", "donkeys"][v]
     _sp = dict(
         title="The Trick Question", subtitle=f"{tot} {animal} · all but {n} run away", tags=("RIDDLE", "WORD PROBLEM"),
         headline=f"A Farmer Has {tot} {animal.title()} - All But {n} Run Away - How Many Are Left",
@@ -329,8 +337,9 @@ def f_allbut(v):
 
 # ------------------------------------------------------------------ 13 socks
 def f_socks(v):
-    c = [2, 3, 4, 5, 6][v]
-    cols = ["black and white", "red, green and blue", "red, green, blue and yellow", "five different colours", "six different colours"][v]
+    c = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12][v]
+    cols = ["black and white", "red, green and blue", "red, green, blue and yellow", "five different colours", "six different colours",
+            "seven different colours", "eight different colours", "nine different colours", "ten different colours", "twelve different colours"][v]
     _sp = dict(
         title="The Sock Drawer Puzzle", subtitle=f"{c} colours · in the dark", tags=("PUZZLE", "LOGIC"),
         headline=f"{c} Colours Of Socks In The Dark - How Many To Grab For A Pair",
@@ -346,7 +355,7 @@ def f_socks(v):
 
 # ------------------------------------------------------------------ 14 chessboard
 def f_wheat(v):
-    n = [8, 10, 12, 16, 20][v]
+    n = [8, 10, 12, 16, 20, 6, 9, 11, 14, 18][v]
     tot = 2 ** n - 1
     _sp = dict(
         title="The Doubling Reward", subtitle=f"1 grain, then double every square · {n} squares", tags=("WORD PROBLEM", "EXPONENTIAL"),
@@ -364,8 +373,8 @@ def f_wheat(v):
 
 # ------------------------------------------------------------------ 15 discount order
 def f_discount(v):
-    d, c = [(20, 10), (25, 20), (30, 10), (40, 20), (50, 10)][v]
-    price = [100, 200, 100, 200, 100][v]
+    d, c = [(20, 10), (25, 20), (30, 10), (40, 20), (50, 10), (15, 20), (10, 50), (60, 20), (35, 40), (45, 20)][v]
+    price = [100, 200, 100, 200, 100, 200, 200, 200, 400, 200][v]
     A = price * (100 - d) // 100 - c
     Bv = (price - c) * (100 - d) // 100
     _sp = dict(
@@ -384,8 +393,8 @@ def f_discount(v):
 
 # ------------------------------------------------------------------ 16 race position
 def f_race(v):
-    pos = [2, 3, 4, 5, 10][v]
-    ords = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth", 6: "sixth", 9: "ninth", 10: "tenth", 11: "eleventh"}
+    pos = [2, 3, 4, 5, 10, 6, 7, 8, 9, 11][v]
+    ords = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth", 6: "sixth", 7: "seventh", 8: "eighth", 9: "ninth", 10: "tenth", 11: "eleventh", 12: "twelfth"}
     _sp = dict(
         title="The Race Riddle", subtitle=f"you pass the runner in {ords[pos]} place", tags=("RIDDLE", "LOGIC"),
         headline=f"You Overtake The Runner In {ords[pos].title()} Place - What Place Are You In",
@@ -402,7 +411,7 @@ def f_race(v):
 
 # ------------------------------------------------------------------ 17 ages
 def f_age(v):
-    k, tot = [(4, 50), (3, 48), (5, 60), (4, 45), (6, 49)][v]
+    k, tot = [(4, 50), (3, 48), (5, 60), (4, 45), (6, 49), (2, 45), (6, 56), (3, 60), (7, 72), (5, 90)][v]
     s = tot // (k + 1)
     f_ = s * k
     _sp = dict(
@@ -420,7 +429,7 @@ def f_age(v):
 
 # ------------------------------------------------------------------ 18 missing dollar
 def f_missing(v):
-    p, Rm = [(10, 25), (20, 55), (15, 40), (30, 85), (12, 31)][v]
+    p, Rm = [(10, 25), (20, 55), (15, 40), (30, 85), (12, 31), (5, 10), (8, 16), (25, 70), (40, 115), (18, 46)][v]
     T = 3 * p
     ref = T - Rm
     each = (ref - 2) // 3
@@ -442,7 +451,8 @@ def f_missing(v):
 
 # ------------------------------------------------------------------ 19 trains & fly
 def f_fly(v):
-    D, s1, s2, fl = [(120, 40, 20, 90), (150, 30, 20, 60), (200, 60, 40, 80), (90, 25, 20, 60), (60, 10, 20, 45)][v]
+    D, s1, s2, fl = [(120, 40, 20, 90), (150, 30, 20, 60), (200, 60, 40, 80), (90, 25, 20, 60), (60, 10, 20, 45),
+                  (180, 40, 20, 60), (100, 30, 20, 80), (240, 50, 30, 70), (300, 60, 40, 50), (270, 40, 50, 60)][v]
     t = Fraction(D, s1 + s2)
     ts = f"{float(t):g}"
     dist = fl * t
@@ -462,9 +472,9 @@ def f_fly(v):
 
 # ------------------------------------------------------------------ 20 gauss logs
 def f_logs(v):
-    n = [10, 12, 15, 20, 100][v]
+    n = [10, 12, 15, 20, 100, 8, 9, 11, 14, 30][v]
     tot = n * (n + 1) // 2
-    thing = ["logs", "bricks", "oranges", "cans", "coins"][v]
+    thing = ["logs", "bricks", "oranges", "cans", "coins", "pipes", "books", "melons", "barrels", "plates"][v]
     _sp = dict(
         title="The Stacking Trick", subtitle=f"{n} at the bottom, one fewer each row", tags=("WORD PROBLEM", "PATTERNS"),
         headline=f"A Stack Of {thing.title()} - {n} On The Bottom Row - How Many In Total",
@@ -481,7 +491,7 @@ def f_logs(v):
 
 # ------------------------------------------------------------------ 21 pizza cuts
 def f_pizza(v):
-    n = [3, 4, 5, 6, 7][v]
+    n = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12][v]
     pieces = n * (n + 1) // 2 + 1
     _sp = dict(
         title="The Pizza Cut Puzzle", subtitle=f"{n} straight cuts · most pieces?", tags=("PUZZLE", "PATTERNS"),
@@ -499,13 +509,14 @@ def f_pizza(v):
 
 # ------------------------------------------------------------------ 22 birthday paradox
 def f_birthday(v):
-    n = [23, 30, 40, 50, 57][v]
+    n = [23, 30, 40, 50, 57, 15, 20, 35, 45, 60][v]
     q = 1.0
     for i in range(n):
         q *= (365 - i) / 365
     p = (1 - q) * 100
     ps = f"{p:.0f}" if p < 99 else f"{p:.1f}"
-    place = ["a classroom", "a football team squad", "a wedding party", "an office floor", "a school bus"][v]
+    place = ["a classroom", "a football team squad", "a wedding party", "an office floor", "a school bus",
+             "a small cafe", "a book club", "a bus tour group", "a cinema row", "a conference table"][v]
     _sp = dict(
         title="The Birthday Paradox", subtitle=f"{n} people · two share a birthday?", tags=("PROBABILITY", "PUZZLE"),
         headline=f"{n} People In A Room - Chance Two Share A Birthday",
@@ -521,7 +532,7 @@ def f_birthday(v):
 
 # ------------------------------------------------------------------ 23 monty hall
 def f_monty(v):
-    n = [3, 4, 5, 10, 100][v]
+    n = [3, 4, 5, 10, 100, 6, 7, 8, 20, 50][v]
     sw = Fraction(n - 1, n)
     _sp = dict(
         title="The Door Puzzle", subtitle=f"{n} doors · 1 car · stay or switch?", tags=("PROBABILITY", "PUZZLE"),
@@ -544,10 +555,10 @@ CTA = ["Follow for more brain teasers.", "Follow for a new puzzle every day.", "
 CTA_TAG = ["CAN YOU SOLVE IT?", "DID YOU GET IT?", "BRAIN TEASER", "TRICKY ONE", "TEST YOUR BRAIN"]
 
 
-def all_specs(count=100):
-    """round-robin over families so every family appears, variants 0..4"""
+def all_specs(count=100, base=0):
+    """round-robin over families so every family appears; base=0 -> variants 0..4, base=5 -> variants 5..9 (ids continue g116...)"""
     out = []
-    for v in range(5):
+    for v in range(base, base + 5):
         for f in FAMILIES:
             sp = f(v)
             sp["family"] = f.__name__
@@ -561,7 +572,7 @@ def all_specs(count=100):
             sp["headline"] = f"{h} (Part {seen[h]})"
         sp["beats"].append(B(CTA[i % len(CTA)]))
         sp["cta_tag"] = CTA_TAG[i % len(CTA_TAG)]
-        sp["id"] = f"g{i + 1:03d}"
+        sp["id"] = f"g{base * len(FAMILIES) + i + 1:03d}"
     return out
 
 

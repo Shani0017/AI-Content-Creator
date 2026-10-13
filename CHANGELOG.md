@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1
+- Fix: "Several ideas at once" with AI problems no longer makes fewer reels than asked - failed AI answers are retried more and topped up with template problems.
+- More problem variants (10 per template), temp files are per-process so parallel renders cannot clash, safer voice/scene handling.
+
 ## 1.5.0
 - New: **Several ideas at once** - add a list of ideas, pick a style for each and choose how many reels to make per idea.
 - New: **YouTube scheduling** (Publish > YouTube) with a full step-by-step guide. Upload as Private in Studio, the app sets title, description and time (same times as Facebook/Instagram).

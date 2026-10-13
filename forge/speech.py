@@ -1,3 +1,4 @@
+﻿import os
 """Text-to-speech (Kokoro, offline) and word timings (faster-whisper, offline), plus a few synthesised sound effects."""
 import math
 import threading
@@ -69,7 +70,7 @@ def words(wav: np.ndarray, sr: int, text: str):
     """word timestamps for an audio array. Falls back to even spacing if whisper is not available."""
     import soundfile as sf
     try:
-        tmp = paths.CACHE / "_asr.wav"
+        tmp = paths.CACHE / f"_asr_{os.getpid()}.wav"
         sf.write(tmp, wav, sr)
         segs, _ = _whisper().transcribe(str(tmp), word_timestamps=True, language="en", beam_size=5)
         out = [{"w": w.word.strip(), "s": round(w.start, 3), "e": round(w.end, 3)} for sg in segs for w in sg.words]
@@ -146,3 +147,4 @@ def music_bed(seconds: float, bpm: int = 92, key: int = 0, vol: float = 0.05) ->
                 tp = np.arange(L) / SR
                 out[i0:i0 + L] += (np.sin(2 * np.pi * f * tp) * np.exp(-tp * 9) * vol * 0.9).astype(np.float32)
     return out
+

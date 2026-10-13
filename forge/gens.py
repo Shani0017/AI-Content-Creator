@@ -189,6 +189,11 @@ def math(params, out_dir, progress):
         progress(0.02, "Asking the AI for problems")
         for d in llm.math_problems(want, params.get("topic", "")):
             specs.append(_ai_spec(d))
+        if len(specs) < count:                          # the AI's answers failed the double-check: top up so the requested count is always made
+            progress(0.03, f"AI gave {len(specs)} checked problems - adding {count - len(specs)} template ones")
+            extra = families.all_specs(115)
+            random.Random(params.get("seed") or time.time()).shuffle(extra)
+            specs += extra[:count - len(specs)]
     out = []
     for k, sp in enumerate(specs[:count]):
         p = _out(out_dir, (sp.get("headline") or sp["title"]) + " #shorts")
