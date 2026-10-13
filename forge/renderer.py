@@ -26,6 +26,29 @@ THEMES = {
     "sunset": dict(bg1=(30, 12, 28), bg2=(74, 24, 38), y=(255, 200, 80), g=(150, 255, 150), p=(255, 110, 160), c=(120, 200, 255), r=(255, 90, 100)),
     "forest": dict(bg1=(8, 24, 18), bg2=(16, 50, 38), y=(250, 224, 100), g=(130, 255, 150), p=(255, 130, 150), c=(120, 220, 230), r=(255, 110, 110)),
 }
+DEFAULT_STYLE = dict(pattern="checker", cell=90, glow=(540, 820, 400), glow_col="y", glow_a=34, panel="round", head="center", chip="pill")
+
+
+def random_theme(rng):
+    """a fresh dark palette: random hue family, accent colours spread around the wheel"""
+    import colorsys
+    h = rng.random()
+    rgb = lambda hh, ss, vv: tuple(int(x * 255) for x in colorsys.hsv_to_rgb(hh % 1, ss, vv))
+    sp = rng.choice([0.07, 0.1, 0.14])
+    return dict(bg1=rgb(h, rng.uniform(.55, .85), rng.uniform(.10, .16)), bg2=rgb(h + sp, rng.uniform(.45, .8), rng.uniform(.22, .34)),
+                y=rgb(h + rng.choice([0.5, 0.45, 0.55]), rng.uniform(.5, .75), 1.0), g=rgb(h + .33, .55, 1.0),
+                p=rgb(h + .83, .6, 1.0), c=rgb(h + .6, .55, 1.0), r=rgb(h + .95, .65, 1.0))
+
+
+def random_style(rng):
+    return dict(pattern=rng.choice(["checker", "dots", "stripes", "grid", "rings", "none"]), cell=rng.choice([70, 90, 120, 150]),
+                gx=rng.uniform(.2, .8), gy=rng.uniform(.25, .6),
+                glow=(rng.randint(250, 830), rng.randint(520, 1100), rng.randint(280, 480)), glow_col=rng.choice(["y", "c", "p", "g"]),
+                glow_a=rng.randint(26, 52), panel=rng.choice(["round", "sharp", "soft"]), panel_style=rng.choice(["fill", "outline"]),
+                head=rng.choice(["center", "center", "left"]), chip=rng.choice(["pill", "square"]),
+                bar=rng.random() < 0.4, bar_col=rng.choice(["y", "c", "p", "g"]))
+
+
 CARD = (18, 24, 58)
 TEXT = (255, 255, 255)
 DIM = (150, 160, 200)
@@ -433,30 +456,52 @@ def render(spec, out_path, theme=None, voice=None, speed=1.04, progress=None, bp
     wav_path = paths.CACHE / f"_mix_{os.getpid()}.wav"
     sf.write(wav_path, buf, SR)
 
-    # 4) static background + header
-    bg = Image.new("RGB", (W, H))
-    px = np.zeros((H, W, 3), np.float32)
+    # 4) static background + header (look comes from spec["style"]: every video gets its own pattern / layout / palette)
+    st = spec.get("style") or DEFAULT_STYLE
     yy = np.linspace(0, 1, H)[:, None, None]
+    px = np.zeros((H, W, 3), np.float32)
     px[:] = np.array(th["bg1"], np.float32) * (1 - yy) + np.array(th["bg2"], np.float32) * yy
-    xx = np.arange(W)[None, :, None]
-    px += 6 * (((xx // 90) + (np.arange(H)[:, None, None] // 90)) % 2)         # faint checker texture
+    gx, gy = np.meshgrid(np.arange(W), np.arange(H))
+    pat, cell = st.get("pattern", "checker"), st.get("cell", 90)
+    if pat == "checker":
+        px += 6 * (((gx // cell) + (gy // cell)) % 2)[..., None]
+    elif pat == "dots":
+        px += 14 * (((gx % cell - cell / 2) ** 2 + (gy % cell - cell / 2) ** 2) < (cell * 0.12) ** 2)[..., None]
+    elif pat == "stripes":
+        px += 7 * ((((gx + gy) // (cell // 2)) % 2))[..., None]
+    elif pat == "grid":
+        px += 12 * (((gx % cell) < 2) | ((gy % cell) < 2))[..., None]
+    elif pat == "rings":
+        r = np.hypot(gx - W * st.get("gx", 0.5), gy - H * st.get("gy", 0.4))
+        px += 9 * ((r // (cell * 1.2)) % 2)[..., None]
     bg = Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), "RGB")
     glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(glow).ellipse((140, 420, 940, 1220), fill=th["y"] + (34,))
+    gcx, gcy, gr = st.get("glow", (540, 820, 400))
+    ImageDraw.Draw(glow).ellipse((gcx - gr, gcy - gr, gcx + gr, gcy + gr), fill=th[st.get("glow_col", "y")] + (st.get("glow_a", 34),))
     bg = Image.alpha_composite(bg.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(120))).convert("RGB")
     d = ImageDraw.Draw(bg, "RGBA")
-    d.rounded_rectangle((45, STAGE_TOP - 15, W - 45, STAGE_BOT + 5), radius=44, fill=(255, 255, 255, 12), outline=(255, 255, 255, 34), width=3)
+    rad = {"round": 44, "sharp": 8, "soft": 70}.get(st.get("panel", "round"), 44)
+    fill_a = 0 if st.get("panel_style") == "outline" else 12
+    d.rounded_rectangle((45, STAGE_TOP - 15, W - 45, STAGE_BOT + 5), radius=rad, fill=(255, 255, 255, fill_a), outline=(255, 255, 255, 60 if fill_a == 0 else 34), width=3)
+    left = st.get("head") == "left"
     f = fit_font(d, spec.get("title", ""), 76, 960)
-    shadowed(d, ((W - text_w(d, spec.get("title", ""), f)) / 2, 96), spec.get("title", ""), f, TEXT)
+    tx0 = 60 if left else (W - text_w(d, spec.get("title", ""), f)) / 2
+    shadowed(d, (tx0, 96), spec.get("title", ""), f, TEXT)
     sub = _plain(spec.get("subtitle", ""))
     sf_ = fit_font(d, sub, 36, 980, False)
-    d.text((W / 2, 205), sub, font=sf_, fill=LABEL, anchor="mm")
+    if left:
+        d.text((60, 205), sub, font=sf_, fill=LABEL, anchor="lm")
+    else:
+        d.text((W / 2, 205), sub, font=sf_, fill=LABEL, anchor="mm")
+    if st.get("bar"):
+        d.rectangle((0, 0, W, 14), fill=th[st.get("bar_col", "y")] + (255,))
     tags = spec.get("tags") or []
     tf = font(26, False)
     tw = [text_w(d, tg, tf) + 40 for tg in tags]
-    x = (W - (sum(tw) + 14 * max(0, len(tw) - 1))) / 2
+    x = 60 if left else (W - (sum(tw) + 14 * max(0, len(tw) - 1))) / 2
+    crad = 21 if st.get("chip", "pill") == "pill" else 6
     for tg, wd in zip(tags, tw):
-        d.rounded_rectangle((x, 250, x + wd, 292), radius=21, fill=(255, 255, 255, 28), outline=(255, 255, 255, 60), width=2)
+        d.rounded_rectangle((x, 250, x + wd, 292), radius=crad, fill=(255, 255, 255, 28), outline=(255, 255, 255, 60), width=2)
         d.text((x + wd / 2, 272), tg, font=tf, fill=LABEL, anchor="mm")
         x += wd + 14
     d.rounded_rectangle((30, 1448, W - 30, 1766), radius=34, fill=(11, 16, 36, 235), outline=(255, 255, 255, 36), width=3)

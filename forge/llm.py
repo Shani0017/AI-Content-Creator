@@ -173,11 +173,12 @@ def analyze_reference(transcript: str, stats: dict, title: str = "", desc: str =
     return heuristic_recipe(transcript, title, desc, stats)
 
 
-def story_script(topic: str, style: dict, beats: int = 6) -> dict:
+def story_script(topic: str, style: dict, beats: int = 6, avoid=(), temperature: float = 0.8) -> dict:
+    no = (" Do NOT reuse these earlier titles or angles: " + "; ".join(list(avoid)[-12:]) + ". Pick a clearly different angle, facts and examples.") if avoid else ""
     return chat_json(
-        f"Write an original 30-45 second voice-over script about: {topic}.\nStyle: {json.dumps(style)}\n"
+        f"Write an original 30-45 second voice-over script about: {topic}.{no}\nStyle: {json.dumps(style)}\n"
         f"Exactly {beats} beats. Each beat is 1-2 short spoken sentences (numbers in words). Open with a hook, end with a call to action to follow.\n"
         'Return JSON: {"headline": "video title", "title": "2-4 word on-screen title", "subtitle": "one short line", '
         '"beats": [{"say": "spoken sentence(s)", "key": "1-4 word on-screen highlight", "bullets": ["optional short line", "optional short line"]}]}',
-        system="You write punchy, accurate short-form scripts. Original wording only. Output JSON only.", temperature=0.8,
+        system="You write punchy, accurate short-form scripts. Original wording only. Output JSON only.", temperature=temperature,
     )

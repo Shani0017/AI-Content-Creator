@@ -555,10 +555,10 @@ CTA = ["Follow for more brain teasers.", "Follow for a new puzzle every day.", "
 CTA_TAG = ["CAN YOU SOLVE IT?", "DID YOU GET IT?", "BRAIN TEASER", "TRICKY ONE", "TEST YOUR BRAIN"]
 
 
-def all_specs(count=100, base=0):
-    """round-robin over families so every family appears; base=0 -> variants 0..4, base=5 -> variants 5..9 (ids continue g116...)"""
+def all_specs(count=230, base=0):
+    """round-robin over families so every family appears: variants base..base+9 (10 per family = 230 different puzzles)"""
     out = []
-    for v in range(base, base + 5):
+    for v in range(base, base + 10):
         for f in FAMILIES:
             sp = f(v)
             sp["family"] = f.__name__

@@ -4,7 +4,7 @@ import re
 import time
 from pathlib import Path
 
-from . import families, llm, paths, renderer, settings
+from . import families, history, llm, paths, renderer, settings
 
 SAFE = re.compile(r'[\\/:*?"<>|]')
 
@@ -77,11 +77,19 @@ def balls(params, out_dir, progress):
         for cls in getattr(m, "BATCH_" + mod[-1].upper()):
             if not chosen or f"{mod}.{cls.__name__}" in chosen:
                 pool.append(cls)
+    history_log = history.seen_list("balls")
     rng = random.Random(params.get("seed") or time.time())
     matched = _pick_sims(params.get("hint", ""), pool) if (not chosen and params.get("hint")) else []
     out = []
     for k in range(count):
-        cls = matched[k % len(matched)] if matched else (pool[k % len(pool)] if chosen else rng.choice(pool))
+        if matched:
+            cls = matched[k % len(matched)]
+        elif chosen:
+            cls = pool[k % len(pool)]
+        else:                                           # least-used simulation first (random among equals): batches and later runs do not repeat
+            cnt = {c.__name__: history_log.count(c.__name__) for c in pool}
+            low = min(cnt.values())
+            cls = rng.choice([c for c in pool if cnt[c.__name__] == low])
         for _ in range(12):
             seed = rng.randint(1, 10 ** 6)
             attrs = {"SEED": seed}
@@ -98,6 +106,8 @@ def balls(params, out_dir, progress):
         p = _out(out_dir, title)
         progress((k + 0.3) / count, f"Rendering {p.stem}")
         core.run(C, p)
+        history.add_log("balls", cls.__name__)
+        history_log.append(cls.__name__)
         out.append(p)
         progress((k + 1) / count, f"Finished {k + 1}/{count}")
     return out
@@ -119,10 +129,12 @@ def music(params, out_dir, progress):
     scenes = scenes or list(sims_i.ORDER)
     rng = random.Random(params.get("seed") or time.time())
     theme_hue = params.get("hue")
+    made = history.seen("music")
     out = []
     for k in range(count):
-        kind = scenes[k % len(scenes)] if len(scenes) > 1 else scenes[0]
-        song = songs[(k * 5 + rng.randint(0, 7)) % len(songs)]
+        combos = [(sc, so) for sc in scenes for so in songs]
+        fresh = [c for c in combos if f"{c[0]}:{c[1]}" not in made]
+        kind, song = rng.choice(fresh or combos)       # a scene + song pair is never made twice until every pair has been
         C, title, th = sims_i.themed(kind, song, rng.randint(0, 9999))
         if theme_hue is not None:
             th["hue"] = float(theme_hue)
@@ -149,9 +161,24 @@ def music(params, out_dir, progress):
         p = _out(out_dir, title)
         progress((k + 0.3) / count, f"Rendering {song}")
         core.run(C, p)
+        history.add("music", f"{kind}:{song}")
+        made.add(f"{kind}:{song}")
         out.append(p)
         progress((k + 1) / count, f"Finished {k + 1}/{count}")
     return out
+
+
+# ------------------------------------------------------------------ look (different every time)
+def _look(params, rng, k=0):
+    """-> (theme, style). theme 'auto' (default) = a new palette and layout for every video; a named theme keeps that palette but still varies the layout"""
+    name = params.get("theme", "auto")
+    if params.get("palette"):
+        th = renderer.theme_from_palette([tuple(c) for c in params["palette"]])
+    elif name in renderer.THEMES:
+        th = renderer.THEMES[name]
+    else:
+        th = renderer.random_theme(rng)
+    return th, renderer.random_style(rng)
 
 
 # ------------------------------------------------------------------ math
@@ -172,61 +199,93 @@ def _ai_spec(d):
 def math(params, out_dir, progress):
     count = int(params.get("count", 1))
     source = params.get("source", "templates")          # templates | ai | mixed
-    theme = renderer.THEMES.get(params.get("theme", "midnight"), renderer.THEMES["midnight"])
-    if params.get("palette"):
-        theme = renderer.theme_from_palette([tuple(c) for c in params["palette"]])
+    rng = random.Random(params.get("seed") or time.time())
+    done = history.seen("math")
     specs = []
     if source in ("templates", "mixed"):
-        allspecs = families.all_specs(115)
+        allspecs = families.all_specs(230)
         fam = params.get("families")
         if fam:
-            allspecs = [s for s in allspecs if s["family"][2:] in fam]
-        random.Random(params.get("seed") or time.time()).shuffle(allspecs)
+            allspecs = [x for x in allspecs if x["family"][2:] in fam]
+        fresh = [x for x in allspecs if history.sig(x["beats"][0]["say"]) not in done]
+        rng.shuffle(fresh)
+        by = {}                                          # spread over families so a batch is not five versions of one puzzle
+        for x in fresh:
+            by.setdefault(x["family"], []).append(x)
+        order = []
+        while any(by.values()):
+            for f_ in rng.sample(list(by), len(by)):
+                if by[f_]:
+                    order.append(by[f_].pop(0))
         want = count if source == "templates" else (count + 1) // 2
-        specs += allspecs[:want]
+        specs += order[:want]
     if source in ("ai", "mixed"):
-        want = count - len(specs)
         progress(0.02, "Asking the AI for problems")
-        for d in llm.math_problems(want, params.get("topic", "")):
-            specs.append(_ai_spec(d))
-        if len(specs) < count:                          # the AI's answers failed the double-check: top up so the requested count is always made
+        try:
+            for d in llm.math_problems(count - len(specs) + 2, params.get("topic", "")):
+                sp_ = _ai_spec(d)
+                sg = history.sig(sp_["beats"][0]["say"])
+                if sg in done or any(history.sig(x["beats"][0]["say"]) == sg for x in specs):
+                    continue                              # this one was already made
+                specs.append(sp_)
+                if len(specs) >= count:
+                    break
+        except Exception:
+            pass
+        if len(specs) < count:                            # AI answers failed the double-check: top up with templates not made yet
+            rest = [x for x in families.all_specs(230) if history.sig(x["beats"][0]["say"]) not in done and x not in specs]
+            rng.shuffle(rest)
             progress(0.03, f"AI gave {len(specs)} checked problems - adding {count - len(specs)} template ones")
-            extra = families.all_specs(115)
-            random.Random(params.get("seed") or time.time()).shuffle(extra)
-            specs += extra[:count - len(specs)]
+            specs += rest[:count - len(specs)]
+    if len(specs) < count:
+        progress(0.04, f"Only {len(specs)} new puzzles were left - every other one was already made")
     out = []
     for k, sp in enumerate(specs[:count]):
+        theme, style = _look(params, rng, k)
+        sp = dict(sp, style=style)
         p = _out(out_dir, (sp.get("headline") or sp["title"]) + " #shorts")
-        sp = dict(sp)
-        renderer.render(sp, p, theme=theme, voice=params.get("voice"), bpm=84 + (k * 7) % 28, key=(k * 5) % 12,
+        renderer.render(sp, p, theme=theme, voice=params.get("voice"), bpm=rng.randint(80, 112), key=rng.randint(0, 11),
                         progress=lambda f, m, k=k: progress((k + f) / max(1, len(specs[:count])), f"{k + 1}/{len(specs[:count])} - {m}"))
+        history.add("math", history.sig(sp["beats"][0]["say"]))
         out.append(p)
     return out
 
 
 # ------------------------------------------------------------------ story / explainer (also used for reference imitation)
 def story(params, out_dir, progress):
-    theme = renderer.THEMES.get(params.get("theme", "midnight"), renderer.THEMES["midnight"])
-    if params.get("palette"):
-        theme = renderer.theme_from_palette([tuple(c) for c in params["palette"]])
+    rng = random.Random(params.get("seed") or time.time())
     count = int(params.get("count", 1))
     topics = params.get("topics") or [params.get("topic") or "a surprising fact most people do not know"]
     style = params.get("style") or {}
+    done = history.seen("story")
+    titles = []
     out = []
     for k in range(count):
         topic = topics[k % len(topics)]
         progress(k / count, f"Writing the script ({topic})")
         beats_n = int(params.get("beats") or max(4, min(9, round((params.get("duration") or 36) / 6))))
-        d = llm.story_script(topic, style, beats=beats_n)
+        d = None
+        for attempt in range(4):                          # a script whose headline or opening was already made is rewritten from a new angle
+            d = llm.story_script(topic, style, beats=beats_n, avoid=titles, temperature=min(1.1, 0.8 + 0.1 * attempt))
+            head = d.get("headline") or d.get("title") or topic
+            sg = history.sig(head + " " + (d["beats"][0]["say"] if d.get("beats") else ""))
+            h_sig = history.sig(head)
+            if sg not in done and h_sig not in done:
+                break
+            titles.append(head)
+        theme, st = _look(params, rng, k)
         beats = []
         for b in d["beats"]:
             beats.append(dict(say=b["say"], cards=[b["key"]] if b.get("key") else None, steps=[x for x in (b.get("bullets") or [])][:3]))
         beats[-1]["cta"] = False
         beats.append(dict(say="Follow for more.", cta=True))
-        sp = dict(title=d.get("title", "Did You Know"), subtitle=d.get("subtitle", ""), tags=["STORY", "FACTS"], beats=beats, cta_tag="WATCH TILL THE END", hook_tag="LISTEN CLOSELY")
+        sp = dict(title=d.get("title", "Did You Know"), subtitle=d.get("subtitle", ""), tags=["STORY", "FACTS"], beats=beats, cta_tag="WATCH TILL THE END",
+                  hook_tag="LISTEN CLOSELY", style=st)
         p = _out(out_dir, (d.get("headline") or d.get("title") or topic) + " #shorts")
-        renderer.render(sp, p, theme=theme, voice=params.get("voice"), bpm=88, key=(k * 3) % 12,
+        renderer.render(sp, p, theme=theme, voice=params.get("voice"), bpm=rng.randint(80, 112), key=rng.randint(0, 11),
                         progress=lambda f, m, k=k: progress((k + f) / count, f"{k + 1}/{count} - {m}"))
+        history.add("story", sg, h_sig)
+        titles.append(d.get("headline") or d.get("title") or topic)
         out.append(p)
     return out
 

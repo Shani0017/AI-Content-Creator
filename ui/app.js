@@ -35,7 +35,7 @@ const COMPOSERS = {
     <label>Topic hint <span class="muted" style="text-transform:none;letter-spacing:0">(AI only, optional)</span></label>
     <input id="f_topic" placeholder="e.g. money, speed, ages, probability">
     <label>How many videos?</label>${stepper("count", 3, 1, 50)}
-    <label>Colour theme</label>${seg("theme", [["midnight", "Midnight"], ["ocean", "Ocean"], ["sunset", "Sunset"], ["forest", "Forest"]], "midnight")}`,
+    <label>Colour theme</label>${seg("theme", [["auto", "Different every time"], ["midnight", "Midnight"], ["ocean", "Ocean"], ["sunset", "Sunset"], ["forest", "Forest"]], "auto")}`,
   balls: () => `
     <h3>Satisfying Balls</h3><p class="muted">Every video is physics-checked: real collisions, nothing fake, ends when everything is done.</p>
     <label>Which simulations?</label>
@@ -55,7 +55,7 @@ const COMPOSERS = {
     <label>Topics <span class="muted" style="text-transform:none;letter-spacing:0">(one per line)</span></label>
     <textarea id="f_topics" placeholder="Why the sky is blue&#10;3 habits of calm people&#10;The history of chess"></textarea>
     <label>How many videos?</label>${stepper("count", 1, 1, 20)}
-    <label>Colour theme</label>${seg("theme", [["midnight", "Midnight"], ["ocean", "Ocean"], ["sunset", "Sunset"], ["forest", "Forest"]], "midnight")}`,
+    <label>Colour theme</label>${seg("theme", [["auto", "Different every time"], ["midnight", "Midnight"], ["ocean", "Ocean"], ["sunset", "Sunset"], ["forest", "Forest"]], "auto")}`,
   multi: () => `
     <h3>Several ideas at once</h3>
     <p class="muted">One row per idea. Choose a style, describe the idea (optional for Math, Balls and Music), and set <b>how many reels to make for that idea</b>. Press Generate and everything is queued.</p>
@@ -100,10 +100,10 @@ async function submitIdeas() {
     const kind = $(".i_kind", r).value, text = $(".i_text", r).value.trim(), count = +$("b", r).textContent;
     if (kind === "story" && !text) return toast("Story ideas need a topic - type one in the row", "bad");
     let p = { count };
-    if (kind === "math") Object.assign(p, { source: text ? "mixed" : "templates", topic: text, theme: "midnight" });
+    if (kind === "math") Object.assign(p, { source: text ? "mixed" : "templates", topic: text, theme: "auto" });
     if (kind === "balls") Object.assign(p, { sims: [], hint: text });
     if (kind === "music") Object.assign(p, { songs: [], scenes: [], topic: text });
-    if (kind === "story") Object.assign(p, { topics: [text], theme: "midnight" });
+    if (kind === "story") Object.assign(p, { topics: [text], theme: "auto" });
     jobs.push([kind, p]);
   }
   if (!jobs.length) return toast("Add at least one idea", "bad");

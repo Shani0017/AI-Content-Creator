@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.2
+- New: **never the same video twice** - the app remembers every puzzle, script, simulation and song it has made (data/history.json) and only makes new ones; if the AI repeats itself the script is rewritten from a new angle.
+- New: **different look every time** - colour theme default is now "Different every time": every video gets its own palette, background pattern, panel shape and header layout.
+- 230 different template puzzles (10 per type), spread across types so a batch is varied.
+
 ## 1.5.1
 - Fix: "Several ideas at once" with AI problems no longer makes fewer reels than asked - failed AI answers are retried more and topped up with template problems.
 - More problem variants (10 per template), temp files are per-process so parallel renders cannot clash, safer voice/scene handling.
