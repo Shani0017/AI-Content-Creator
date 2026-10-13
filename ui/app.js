@@ -3,7 +3,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const api = async (url, body) => {
   const r = await fetch(url, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error((await r.text()).slice(0, 200));
+  if (!r.ok) { const tx = await r.text(); let m = tx; try { m = JSON.parse(tx).error || tx; } catch { } throw new Error(String(m).replace(/<[^>]+>/g, " ").slice(0, 260)); }
   return r.json();
 };
 const toast = (msg, kind = "") => {

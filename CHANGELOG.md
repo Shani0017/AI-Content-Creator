@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.3
+- Update button is sturdier: retries the download, skips files that are locked instead of failing, and shows the real reason if it cannot update.
+
 ## 1.5.2
 - New: **never the same video twice** - the app remembers every puzzle, script, simulation and song it has made (data/history.json) and only makes new ones; if the AI repeats itself the script is rewritten from a new angle.
 - New: **different look every time** - colour theme default is now "Different every time": every video gets its own palette, background pattern, panel shape and header layout.

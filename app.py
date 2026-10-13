@@ -97,7 +97,11 @@ def update_check():
 
 @app.post("/api/update/apply")
 def update_apply():
-    res = updater.apply()
+    try:
+        res = updater.apply()
+    except Exception as e:                                   # show the real reason in the app instead of a bare "500 Internal Server Error"
+        import traceback
+        return jsonify({"error": f"Update failed: {str(e)[:300]}", "detail": traceback.format_exc()[-600:]}), 500
     threading.Timer(0.8, updater.restart).start()
     return jsonify(res)
 

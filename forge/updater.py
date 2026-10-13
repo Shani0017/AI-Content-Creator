@@ -59,29 +59,50 @@ def check(force=False) -> dict:
 
 
 def apply() -> dict:
-    """download the repo zip, copy changed app files over this folder, reinstall requirements if they changed"""
+    """download the repo zip, copy changed app files over this folder, reinstall requirements if they changed.
+    Files that cannot be replaced (locked by antivirus / another program) are skipped and reported instead of failing the whole update."""
     url = f"https://github.com/{REPO}/archive/refs/heads/{BRANCH}.zip"
-    r = requests.get(url, timeout=120)
-    r.raise_for_status()
-    tmp = Path(tempfile.mkdtemp(prefix="forge_update_"))
+    r = None
+    for attempt in range(3):
+        try:
+            r = requests.get(url, timeout=180)
+            r.raise_for_status()
+            break
+        except Exception as e:
+            if attempt == 2:
+                raise RuntimeError("Could not download the update from GitHub (" + str(e)[:120] + "). Check the internet connection and try again.")
+            time.sleep(2)
+    tmp = Path(tempfile.mkdtemp(prefix="fu_"))
     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
         z.extractall(tmp)
     src = next(p for p in tmp.iterdir() if p.is_dir())
-    old_req = (ROOT / "requirements.txt").read_text() if (ROOT / "requirements.txt").exists() else ""
-    n = 0
+    req = ROOT / "requirements.txt"
+    old_req = req.read_text(encoding="utf-8", errors="ignore") if req.exists() else ""
+    n, skipped = 0, []
     for p in src.rglob("*"):
         rel = p.relative_to(src)
         if rel.parts[0] in KEEP or p.is_dir():
             continue
         dst = ROOT / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(p, dst)
-        n += 1
-    new_req = (ROOT / "requirements.txt").read_text()
+        try:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if dst.exists():
+                try:
+                    os.chmod(dst, 0o666)
+                except Exception:
+                    pass
+            shutil.copy2(p, dst)
+            n += 1
+        except Exception as e:
+            skipped.append(f"{rel}: {str(e)[:60]}")
+    new_req = req.read_text(encoding="utf-8", errors="ignore") if req.exists() else ""
     if new_req != old_req:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(ROOT / "requirements.txt")], cwd=ROOT)
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(req)], cwd=ROOT, timeout=900)
+        except Exception:
+            pass
     shutil.rmtree(tmp, ignore_errors=True)
-    return {"files": n, "reinstalled": new_req != old_req}
+    return {"files": n, "reinstalled": new_req != old_req, "skipped": skipped[:5]}
 
 
 def restart():
