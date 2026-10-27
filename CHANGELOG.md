@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0
+- New style: **Rays** - rays of light bounce inside a glass vessel (1, then 10, then 100 rays), 16 vessel shapes, new colours and counts every time.
+- New style: **Country Battle** - flag balls shoot it out until one country is left (World, Asia, Southeast Asia, Football line-ups).
+- New style: **Piano Balls** - guess the song: every note is a ball that lands on its piano key on the beat (23 public-domain songs).
+- New style: **Interview Questions** - 300 famous interview puzzles solved step by step with a voice-over; a question is never made twice.
+- Story & Facts: one-click series - **Atomic Habits**, **Tech Disasters**, **Decision Bias** (real stories, ready-made topic lists).
+- Fonts are loaded from memory, so updates can always replace every file.
+
 ## 1.5.3
 - Update button is sturdier: retries the download, skips files that are locked instead of failing, and shows the real reason if it cannot update.
 

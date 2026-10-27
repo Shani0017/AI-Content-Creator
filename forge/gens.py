@@ -1,4 +1,5 @@
 """The four content generators. Each takes (params, out_dir, progress) and returns a list of finished video paths."""
+import json
 import random
 import re
 import time
@@ -36,6 +37,10 @@ def catalog():
         "scenes": [{"id": k, "name": v[1].split(" - ")[0].replace("{s}", "").strip()} for k, v in sims_i.CLASSES.items()],
         "math_families": [f.__name__[2:] for f in families.FAMILIES],
         "themes": list(renderer.THEMES),
+        "ray_shapes": [x[0] for x in __import__("rays").SHAPES],
+        "lineups": list(LINEUPS),
+        "piano_songs": list(sims_h.SONGS),
+        "story_series": json.loads((Path(__file__).with_name("story_series.json")).read_text(encoding="utf-8")),
     }
 
 
@@ -290,4 +295,162 @@ def story(params, out_dir, progress):
     return out
 
 
-GENERATORS = {"balls": balls, "music": music, "math": math, "story": story}
+
+# ------------------------------------------------------------------ rays (rays bouncing inside a vessel: 1 -> 100 rays)
+def rays(params, out_dir, progress):
+    import rays as R
+    count = int(params.get("count", 1))
+    shapes = params.get("shapes") or []
+    rng = random.Random(params.get("seed") or time.time())
+    done = history.seen("rays")
+    out = []
+    for k in range(count):
+        for _ in range(50):
+            v = R.variant(rng, rng.choice(shapes) if shapes else None)
+            if R.key(v) not in done:
+                break
+        title = f"Rays Bouncing In A {v['name']} {v['title']} - Satisfying ASMR #shorts"
+        p = _out(out_dir, title)
+        progress((k + 0.1) / count, f"Tracing rays ({v['name']}, {v['title']})")
+        R.render(v, p)
+        history.add("rays", R.key(v))
+        done.add(R.key(v))
+        out.append(p)
+        progress((k + 1) / count, f"Finished {k + 1}/{count}")
+    return out
+
+
+# ------------------------------------------------------------------ country battle (flag balls shoot it out, last country standing)
+LINEUPS = {
+    "world": ["MY", "ID", "PH", "TH", "VN", "SG", "BR", "US", "JP", "IN", "KR", "CN", "FR", "DE", "ES", "AR"],
+    "asia": ["MY", "ID", "PH", "TH", "VN", "SG", "JP", "KR", "CN", "IN", "PK"],
+    "sea": ["MY", "ID", "PH", "TH", "VN", "SG", "JP", "KR"],
+    "football": ["BR", "AR", "FR", "DE", "ES", "IT", "US", "JP", "KR", "NG", "MY", "ID"],
+}
+BATTLE_TITLES = {
+    "world": ["16 Countries Go To War Only One Survives", "Country War - Which Flag Survives", "Country Ball War - Comment Your Country",
+              "16 Flags Shoot It Out - Who Wins", "World War Of Flags - Last Country Standing"],
+    "asia": ["Asian Country War - Last Country Standing", "Which Asian Country Wins The War", "Malaysia vs Indonesia vs All Of Asia - Country War",
+             "Asian Flag War - Comment Your Country"],
+    "sea": ["Malaysia vs Indonesia vs Philippines vs Thailand - Country War", "Southeast Asia War - Who Wins", "SEA Country War - Who Survives",
+            "Malaysia Indonesia Philippines - Flag War"],
+    "football": ["Football Nations War - Brazil vs Argentina vs The World", "Which Football Nation Wins The War",
+                 "World Cup Country War - Last Flag Standing", "Football Countries Shoot It Out - Comment Your Team"],
+}
+
+
+def battle(params, out_dir, progress):
+    import audit2, core, sims_g
+    count = int(params.get("count", 1))
+    kinds = params.get("lineups") or list(LINEUPS)
+    rng = random.Random(params.get("seed") or time.time())
+    used = history.seen("battle")
+    out = []
+    for k in range(count):
+        kind = kinds[k % len(kinds)]
+        teams = LINEUPS[kind][:]
+        rng.shuffle(teams)
+        for _ in range(30):
+            C = type("ShootingBattle", (sims_g.ShootingBattle,), {"TEAMS": teams, "SEED": rng.randint(1, 10 ** 6)})
+            progress((k + 0.1) / count, f"Checking the battle ({kind})")
+            name, length, issues, _ = audit2.audit(C)
+            if not issues:
+                break
+        else:
+            continue
+        pool = [t for t in BATTLE_TITLES[kind] if history.sig(t) not in used] or [f"{rng.choice(BATTLE_TITLES[kind])} {rng.randint(2, 99)}"]
+        title = rng.choice(pool)
+        p = _out(out_dir, f"{title} - Satisfying ASMR #shorts")
+        progress((k + 0.3) / count, f"Rendering {title}")
+        core.run(C, p)
+        history.add("battle", history.sig(title), f"{kind}:{C.SEED}")
+        used.add(history.sig(title))
+        out.append(p)
+        progress((k + 1) / count, f"Finished {k + 1}/{count}")
+    return out
+
+
+# ------------------------------------------------------------------ piano balls (every note is a ball that lands on its key)
+def piano(params, out_dir, progress):
+    import audit2, core, sims_h
+    count = int(params.get("count", 1))
+    songs = params.get("songs") or list(sims_h.SONGS)
+    rng = random.Random(params.get("seed") or time.time())
+    made = history.seen("piano")
+    out = []
+    for k in range(count):
+        fresh = [x for x in songs if x not in made] or songs
+        name = rng.choice(fresh)
+        for seed in (3, 4, 5, 6, 7):
+            C = sims_h.song(name, seed)
+            progress((k + 0.1) / count, f"Checking timing ({name})")
+            _, length, issues, _ = audit2.audit(C)
+            if not issues:
+                break
+        else:
+            continue
+        p = _out(out_dir, f"Guess The Song - {name} Played By Falling Balls #shorts")
+        progress((k + 0.3) / count, f"Rendering {name}")
+        core.run(C, p)
+        history.add("piano", name)
+        made.add(name)
+        out.append(p)
+        progress((k + 1) / count, f"Finished {k + 1}/{count}")
+    return out
+
+
+# ------------------------------------------------------------------ interview questions (300 hand-checked problems with animated working-out)
+def _iq_problems():
+    import importlib, sys
+    d = str(Path(__file__).resolve().parent / "iq")
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    import iq_engine
+    iq_engine.register()
+    probs = []
+    for f in sorted(Path(d).glob("iq_problems_*.py")):
+        probs += importlib.import_module(f.stem).PROBLEMS
+    return iq_engine, [x for x in probs if "qparts" in x and "steps" in x]
+
+
+def _iq_spec(E, pr):
+    beats, parts = [], []
+    hook = [{"k": "big", "text": pr["hook_text"], "col": "y", "size": 104, "y": 650, "dur": 0.2}]
+    if pr.get("hook_sub"):
+        hook[0]["sub"] = pr["hook_sub"]
+    beats.append(dict(say=pr["hook_say"], nocards=True)); parts.append(hook)
+    beats.append(dict(say=pr["q"], nocards=True, steps=[E.clean(x) for x in pr.get("qsteps", [])])); parts.append(pr["qparts"])
+    for st in pr["steps"]:
+        b = dict(say=st["say"], nocards=True)
+        if st.get("steps"):
+            b["steps"] = [E.clean(x) for x in st["steps"]]
+        if st.get("stamp"):
+            b["stamp"] = ("WRONG", "#ff5c8a") if st["stamp"] == "WRONG" else (st["stamp"], "#ffd24d")
+        beats.append(b); parts.append(st["parts"])
+    beats.append(dict(say=pr["ans_say"], answer=pr["ans"], nocards=True)); parts.append(pr.get("aparts", []))
+    beats.append(dict(say="Follow for more interview questions.", nocards=True)); parts.append([])
+    return dict(title=f"{pr['org']} Interview Question", subtitle=pr["sub"], tags=(pr["tag"], "INTERVIEW QUESTION"), headline=pr["title"],
+                scene="dsl", params={"beats": parts}, cta_tag="INTERVIEW QUESTION", hook_tag="CAN YOU SOLVE IT?", beats=beats)
+
+
+def interview(params, out_dir, progress):
+    E, probs = _iq_problems()
+    count = int(params.get("count", 1))
+    rng = random.Random(params.get("seed") or time.time())
+    done = history.seen("interview")
+    fresh = [x for x in probs if history.sig(x["title"]) not in done]
+    rng.shuffle(fresh)
+    out = []
+    for k, pr in enumerate(fresh[:count]):
+        p = _out(out_dir, f"{pr['title']} - Interview Question")
+        renderer.render(_iq_spec(E, pr), p, theme=renderer.THEMES["midnight"], voice="am_adam",
+                        progress=lambda f, m, k=k: progress((k + f) / count, m))
+        history.add("interview", history.sig(pr["title"]))
+        out.append(p)
+        progress((k + 1) / count, f"Finished {k + 1}/{count}")
+    if not fresh:
+        raise RuntimeError("All 300 interview questions have been made already.")
+    return out
+
+
+GENERATORS = {"balls": balls, "music": music, "math": math, "story": story, "rays": rays, "battle": battle, "piano": piano, "interview": interview}

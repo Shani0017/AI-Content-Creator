@@ -55,7 +55,7 @@ def _progress(job):
 def _run(job):
     kind, params = job["kind"], job["params"]
     cb = _progress(job)
-    out_dir = paths.OUTPUT / {"balls": "Balls", "music": "Music", "math": "Math", "story": "Stories", "reference": "Reference"}.get(kind, "Other")
+    out_dir = paths.OUTPUT / {"balls": "Balls", "music": "Music", "math": "Math", "story": "Stories", "reference": "Reference", "rays": "Rays", "battle": "Country Battles", "piano": "Piano Balls", "interview": "Interview Questions"}.get(kind, "Other")
     if kind == "setup":
         speech.download_models(cb)
         return []

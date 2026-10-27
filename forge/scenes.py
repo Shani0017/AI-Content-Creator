@@ -1,6 +1,7 @@
 """Illustrated, animated scenes - one per problem family. Everything is drawn from the problem's own numbers:
 50 cars means 50 cars on screen, a 12-person handshake draws 12 people and every handshake line, a clock shows the real time.
 draw(frame_rgb_image, name, T, theme, params) where T = beat_index + progress_in_beat (float)."""
+import io
 import math
 import random
 
@@ -17,7 +18,7 @@ _f = {}
 def font(sz, bold=True):
     k = (sz, bold)
     if k not in _f:
-        _f[k] = ImageFont.truetype(str(paths.FONTS / ("Poppins-ExtraBold.ttf" if bold else "Poppins-SemiBold.ttf")), sz)
+        _f[k] = ImageFont.truetype(io.BytesIO((paths.FONTS / ("Poppins-ExtraBold.ttf" if bold else "Poppins-SemiBold.ttf")).read_bytes()), sz)   # from memory: the font file stays unlocked so updates can replace it
     return _f[k]
 
 

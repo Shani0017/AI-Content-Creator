@@ -54,8 +54,27 @@ const COMPOSERS = {
     <h3>Story &amp; Facts</h3><p class="muted">Your AI model writes an original script, a voice reads it, keywords pop on screen.</p>
     <label>Topics <span class="muted" style="text-transform:none;letter-spacing:0">(one per line)</span></label>
     <textarea id="f_topics" placeholder="Why the sky is blue&#10;3 habits of calm people&#10;The history of chess"></textarea>
+    <div class="row" style="margin-top:8px"><span class="muted">Ready-made series:</span>${Object.keys(S.catalog.story_series || {}).map(k => `<button class="btn ghost series" data-s="${esc(k)}">${esc(k)}</button>`).join("")}</div>
     <label>How many videos?</label>${stepper("count", 1, 1, 20)}
     <label>Colour theme</label>${seg("theme", [["auto", "Different every time"], ["midnight", "Midnight"], ["ocean", "Ocean"], ["sunset", "Sunset"], ["forest", "Forest"]], "auto")}`,
+  rays: () => `
+    <h3>Rays</h3><p class="muted">Sets of rays fall into a vessel and bounce off its walls. Every video gets a new shape, colours and ray counts.</p>
+    <label>Vessel <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+    <div class="chips" id="shapeChips">${S.catalog.ray_shapes.map(s => `<button data-id="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+    <label>How many videos?</label>${stepper("count", 3, 1, 50)}`,
+  battle: () => `
+    <h3>Country Battle</h3><p class="muted">Physics-checked: every hit counts, last country standing wins.</p>
+    <label>Line-up <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+    <div class="chips" id="lineChips">${S.catalog.lineups.map(s => `<button data-id="${esc(s)}">${esc({ world: "World (16)", asia: "Asia", sea: "Southeast Asia", football: "Football nations" }[s] || s)}</button>`).join("")}</div>
+    <label>How many videos?</label>${stepper("count", 3, 1, 30)}`,
+  piano: () => `
+    <h3>Piano Balls</h3><p class="muted">Public-domain melodies only. Each song is made once before any repeats.</p>
+    <label>Songs <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+    <div class="chips" id="pianoChips">${S.catalog.piano_songs.map(s => `<button data-id="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+    <label>How many videos?</label>${stepper("count", 3, 1, 30)}`,
+  interview: () => `
+    <h3>Interview Questions</h3><p class="muted">Hand-checked puzzles with the working-out animated step by step. A question is never made twice.</p>
+    <label>How many videos?</label>${stepper("count", 3, 1, 50)}`,
   multi: () => `
     <h3>Several ideas at once</h3>
     <p class="muted">One row per idea. Choose a style, describe the idea (optional for Math, Balls and Music), and set <b>how many reels to make for that idea</b>. Press Generate and everything is queued.</p>
@@ -74,6 +93,10 @@ const IDEA_HINT = {
   balls: "e.g. bouncing balls inside a hexagon (or leave empty for a surprise)",
   music: "e.g. xylophone playing a Christmas song (or leave empty)",
   story: "e.g. Why the sky is blue (required)",
+  rays: "e.g. Funnel or Goblet (or leave empty)",
+  battle: "leave empty - line-ups rotate",
+  piano: "leave empty - songs rotate",
+  interview: "leave empty - 300 questions",
 };
 function addIdea(kind = "math", count = 3) {
   const row = document.createElement("div");
@@ -104,6 +127,7 @@ async function submitIdeas() {
     if (kind === "balls") Object.assign(p, { sims: [], hint: text });
     if (kind === "music") Object.assign(p, { songs: [], scenes: [], topic: text });
     if (kind === "story") Object.assign(p, { topics: [text], theme: "auto" });
+    if (kind === "rays") p.shapes = text ? [text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()] : [];
     jobs.push([kind, p]);
   }
   if (!jobs.length) return toast("Add at least one idea", "bad");
@@ -128,6 +152,12 @@ function openComposer(type) {
   if ($("#go")) $("#go").onclick = type === "multi" ? submitIdeas : submitCurrent;
   if (type === "multi") { $("#addIdea").onclick = () => addIdea(); addIdea("math", 3); addIdea("balls", 3); }
   if ($("#analyze")) $("#analyze").onclick = analyze;
+  $$(".series", box).forEach(b => b.onclick = () => {
+    const list = S.catalog.story_series[b.dataset.s] || [];
+    $("#f_topics").value = list.map(t => `${b.dataset.s}: ${t}`).join("\n");
+    S.form.count = Math.min(20, list.length); const st = $('.stepper[data-key="count"] b', box); if (st) st.textContent = S.form.count;
+    toast(`${list.length} ${b.dataset.s} topics added`, "good");
+  });
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 $$(".type").forEach(t => t.onclick = () => openComposer(t.dataset.type));
@@ -140,6 +170,9 @@ async function submitCurrent() {
   if (t === "math") Object.assign(params, { source: f.source, theme: f.theme, topic: $("#f_topic")?.value || "" });
   if (t === "balls") params.sims = picked("simChips");
   if (t === "music") Object.assign(params, { songs: picked("songChips"), scenes: picked("sceneChips") });
+  if (t === "rays") params.shapes = picked("shapeChips");
+  if (t === "battle") params.lineups = picked("lineChips");
+  if (t === "piano") params.songs = picked("pianoChips");
   if (t === "story") {
     const topics = ($("#f_topics").value || "").split("\n").map(s => s.trim()).filter(Boolean);
     if (!topics.length) return toast("Add at least one topic", "bad");
@@ -222,7 +255,7 @@ function showRecipe(r) {
   $("#makeLike").onclick = async () => { await enqueue(S.form.refkind, refParams(r, S.form.count, S.form.refkind)); };
   if (!r._started) { r._started = true; enqueue(kind0, refParams(r, 1, kind0)); }
 }
-const kindName = k => ({ math: "Math & Puzzles", story: "Story & Facts", balls: "Satisfying Balls", music: "Music Balls" }[k] || k);
+const kindName = k => ({ math: "Math & Puzzles", story: "Story & Facts", balls: "Satisfying Balls", music: "Music Balls", rays: "Rays", battle: "Country Battle", piano: "Piano Balls", interview: "Interview Questions" }[k] || k);
 function hueOf(pal) {
   let best = pal[0], bs = -1;
   pal.forEach(([r, g, b]) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b), s = mx ? (mx - mn) / mx : 0; if (s * mx > bs) { bs = s * mx; best = [r, g, b]; } });
@@ -271,7 +304,7 @@ async function poll() {
   if (!S.seenDone) S.seenDone = new Set(S.jobs.filter(j => j.state === "done").map(j => j.id));
   S.jobs.filter(j => j.state === "done" && !S.seenDone.has(j.id)).forEach(j => { S.seenDone.add(j.id); if (j.kind !== "reference") { toast("Finished — see Library", "good"); loadLibrary(); } });
 }
-const label = k => ({ math: "Math & Puzzles", balls: "Satisfying Balls", music: "Music Balls", story: "Story & Facts", reference: "Studying reference", setup: "Downloading voice files", pull: "Downloading AI model", publish: "Publishing to Facebook", youtube: "Scheduling on YouTube" }[k] || k);
+const label = k => ({ math: "Math & Puzzles", balls: "Satisfying Balls", music: "Music Balls", story: "Story & Facts", reference: "Studying reference", setup: "Downloading voice files", pull: "Downloading AI model", rays: "Rays", battle: "Country Battle", piano: "Piano Balls", interview: "Interview Questions", publish: "Publishing to Facebook", youtube: "Scheduling on YouTube" }[k] || k);
 
 /* ---------------- library ---------------- */
 async function loadLibrary() {

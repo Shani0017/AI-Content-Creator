@@ -1,4 +1,4 @@
-﻿import os
+import os
 """Spec -> finished 1080x1920 video. Pure Pillow + ffmpeg (no browser needed), so it runs the same on any Windows PC.
 
 spec = {
@@ -7,7 +7,9 @@ spec = {
 }
 Step lines may contain <span class="y|g|p|c|r">coloured</span> runs. Number cards pop in on the spoken number unless "cards" is given.
 """
+import io
 import math
+from pathlib import Path
 import re
 import subprocess
 
@@ -62,7 +64,7 @@ def font(size, bold=True):
     if k not in _fonts:
         f = paths.FONTS / ("Poppins-ExtraBold.ttf" if bold else "Poppins-SemiBold.ttf")
         try:
-            _fonts[k] = ImageFont.truetype(str(f), size)
+            _fonts[k] = ImageFont.truetype(io.BytesIO(Path(f).read_bytes()), size)   # from memory: the font file stays unlocked so updates can replace it
         except Exception:
             _fonts[k] = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", size)
     return _fonts[k]
